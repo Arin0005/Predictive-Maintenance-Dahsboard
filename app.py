@@ -42,9 +42,9 @@ try:
     models['misalign'] = keras.models.load_model(config.MISALIGN_MODEL_PATH, compile=False)
     scalers['misalign_X'] = joblib.load(config.MISALIGN_SCALER_X_PATH)
     scalers['misalign_y'] = joblib.load(config.MISALIGN_SCALER_Y_PATH)
-    print("✓ Misalignment model loaded successfully!")
+    print("Misalignment model loaded successfully!")
 except Exception as e:
-    print(f"✗ Error loading misalignment model: {e}")
+    print(f"Error loading misalignment model: {e}")
     models['misalign'] = None
 
 try:
@@ -52,9 +52,9 @@ try:
     models['bpfi'] = keras.models.load_model(config.BPFI_MODEL_PATH, compile=False)
     scalers['bpfi_X'] = joblib.load(config.BPFI_SCALER_X_PATH)
     scalers['bpfi_y'] = joblib.load(config.BPFI_SCALER_Y_PATH)
-    print("✓ BPFI model loaded successfully!")
+    print("BPFI model loaded successfully!")
 except Exception as e:
-    print(f"✗ Error loading BPFI model: {e}")
+    print(f"Error loading BPFI model: {e}")
     models['bpfi'] = None
 
 # ==================== HELPER FUNCTIONS ====================
@@ -211,8 +211,48 @@ def process_and_predict(df_temp, df_vib, model_type='misalign'):
 
 @app.route('/')
 def index():
-    """Serve the main page"""
+    """Serve the home page"""
     return render_template('index.html')
+
+@app.route('/trymodel')
+def trymodel():
+    """Serve the try model/dashboard page"""
+    return render_template('trymodel.html')
+
+@app.route('/faq')
+def faq():
+    """Serve the FAQ page"""
+    return render_template('faq.html')
+
+@app.route('/about-us')
+def about_us():
+    """Serve the About Us page"""
+    return render_template('about-us.html')
+
+@app.route('/about-modal')
+def about_modal():
+    """Serve the About Model page"""
+    return render_template('about-modal.html')
+
+@app.route('/modal-evaluation')
+def modal_evaluation():
+    """Serve the Model Evaluation page"""
+    return render_template('modal-evaluation.html')
+
+@app.route('/data-collection')
+def data_collection():
+    """Serve the Data Collection page"""
+    return render_template('data-collection.html')
+
+@app.route('/maintenance-evolution')
+def maintenance_evolution():
+    """Serve the Maintenance Evolution page"""
+    return render_template('maintenance-evolution.html')
+
+@app.route('/future-scope')
+def future_scope():
+    """Serve the Future Scope page"""
+    return render_template('future-scope.html')
 
 @app.route('/health', methods=['GET'])
 def health_check():

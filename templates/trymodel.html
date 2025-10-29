@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Try Model - Predictive Maintenance Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <!-- Include Navbar -->
+    <nav class="top-nav">
+      <div class="nav-left">
+        <div class="brand">
+          <div class="brand-text">
+            <div class="brand-title">V0 AI</div>
+            <div class="brand-sub">Predictive Maintenance</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-center">
+        <a href="/" class="nav-link">FAQ</a>
+
+        <!-- About Dropdown -->
+        <div class="nav-dropdown">
+          <button class="nav-link dropdown-toggle">About ▾</button>
+          <div class="dropdown-menu">
+            <a href="/about-us" class="dropdown-item">About Us</a>
+            <div class="dropdown-submenu">
+              <button class="dropdown-item submenu-toggle">
+                About Project ›
+              </button>
+              <div class="submenu-content">
+                <a href="/about-modal" class="dropdown-item">About Model</a>
+                <a href="/modal-evaluation" class="dropdown-item"
+                  >Model Evaluation</a
+                >
+                <a href="/data-collection" class="dropdown-item"
+                  >Data Collection</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- More Dropdown -->
+        <div class="nav-dropdown">
+          <button class="nav-link dropdown-toggle">More ▾</button>
+          <div class="dropdown-menu">
+            <a href="/maintenance-evolution" class="dropdown-item"
+              >Maintenance Evolution</a
+            >
+            <a href="/future-scope" class="dropdown-item">Future Scope</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">
+          <span id="themeIcon">🌙</span>
+        </button>
+        <a href="/trymodel" class="btn-try">TRY MODEL</a>
+      </div>
+    </nav>
+
+    <div class="dashboard-container">
+      <!-- Header -->
+      <header class="header">
+        <h1>⚙️ Predictive Maintenance Dashboard</h1>
+        <p>Upload sensor data to predict remaining useful life (RUL)</p>
+      </header>
+
+      <!-- Upload Sections Container -->
+      <div class="upload-sections-container">
+        <!-- Misalignment Upload Section -->
+        <section class="upload-section">
+          <div class="upload-card">
+            <h2>🔧 Shaft Misalignment Analysis</h2>
+            <form id="misalignForm" class="upload-form">
+              <div class="file-input-group">
+                <div class="file-input">
+                  <label for="misalignTempFile">
+                    <span class="label-icon">🌡️</span>
+                    <span>Temperature/Current CSV</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="misalignTempFile"
+                    name="temp_file"
+                    accept=".csv"
+                    required
+                  />
+                  <span class="file-name" id="misalignTempFileName"
+                    >No file chosen</span
+                  >
+                </div>
+
+                <div class="file-input">
+                  <label for="misalignVibFile">
+                    <span class="label-icon">📊</span>
+                    <span>Vibration CSV</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="misalignVibFile"
+                    name="vib_file"
+                    accept=".csv"
+                    required
+                  />
+                  <span class="file-name" id="misalignVibFileName"
+                    >No file chosen</span
+                  >
+                </div>
+              </div>
+
+              <button type="submit" class="btn-predict" id="misalignPredictBtn">
+                <span id="misalignBtnText">Predict RUL</span>
+                <span
+                  id="misalignBtnLoader"
+                  class="loader"
+                  style="display: none"
+                ></span>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- BPFI Upload Section -->
+        <section class="upload-section">
+          <div class="upload-card">
+            <h2>⚙️ Bearing Fault Inner Analysis</h2>
+            <form id="bpfiForm" class="upload-form">
+              <div class="file-input-group">
+                <div class="file-input">
+                  <label for="bpfiTempFile">
+                    <span class="label-icon">🌡️</span>
+                    <span>Temperature/Current CSV</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="bpfiTempFile"
+                    name="temp_file"
+                    accept=".csv"
+                    required
+                  />
+                  <span class="file-name" id="bpfiTempFileName"
+                    >No file chosen</span
+                  >
+                </div>
+
+                <div class="file-input">
+                  <label for="bpfiVibFile">
+                    <span class="label-icon">📊</span>
+                    <span>Vibration CSV</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="bpfiVibFile"
+                    name="vib_file"
+                    accept=".csv"
+                    required
+                  />
+                  <span class="file-name" id="bpfiVibFileName"
+                    >No file chosen</span
+                  >
+                </div>
+              </div>
+
+              <button type="submit" class="btn-predict" id="bpfiPredictBtn">
+                <span id="bpfiBtnText">Predict RUL</span>
+                <span
+                  id="bpfiBtnLoader"
+                  class="loader"
+                  style="display: none"
+                ></span>
+              </button>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      <!-- Model Type Display -->
+      <div class="model-info" id="modelInfo" style="display: none">
+        <span class="model-badge" id="modelBadge"></span>
+      </div>
+
+      <!-- Statistics Cards -->
+      <section class="stats-section" id="statsSection" style="display: none">
+        <div class="stat-card stat-card-blue">
+          <div class="stat-icon">📈</div>
+          <div class="stat-content">
+            <h3>Total Sequences</h3>
+            <p class="stat-value" id="totalSequences">0</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card-green">
+          <div class="stat-icon">⏱️</div>
+          <div class="stat-content">
+            <h3>Mean RUL</h3>
+            <p class="stat-value" id="meanRUL">0 min</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card-yellow">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-content">
+            <h3>Warning Count</h3>
+            <p class="stat-value" id="warningCount">0</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card-orange">
+          <div class="stat-icon">🔶</div>
+          <div class="stat-content">
+            <h3>Severe Count</h3>
+            <p class="stat-value" id="severeCount">0</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card-red">
+          <div class="stat-icon">🚨</div>
+          <div class="stat-content">
+            <h3>Critical Count</h3>
+            <p class="stat-value" id="criticalCount">0</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <section class="charts-section" id="chartsSection" style="display: none">
+        <!-- RUL Progression Chart -->
+        <div class="chart-card chart-full">
+          <h2>📉 RUL Progression Over Time</h2>
+          <div class="scrollable-chart-container">
+            <canvas id="rulProgressionChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Health State Distribution -->
+        <div class="chart-card">
+          <h2>🏥 Health State Distribution</h2>
+          <div class="chart-container-fixed">
+            <canvas id="healthDistributionChart"></canvas>
+          </div>
+        </div>
+
+        <!-- RUL Histogram -->
+        <div class="chart-card">
+          <h2>📊 RUL Distribution</h2>
+          <div class="chart-container-fixed">
+            <canvas id="rulHistogramChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Maintenance Urgency -->
+        <div class="chart-card">
+          <h2>⚙️ Maintenance Urgency</h2>
+          <div class="chart-container-fixed">
+            <canvas id="urgencyChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Statistics Table -->
+        <div class="chart-card">
+          <h2>📋 Detailed Statistics</h2>
+          <div class="stats-table">
+            <table>
+              <tr>
+                <td>Mean RUL:</td>
+                <td id="detailMeanRUL">-</td>
+              </tr>
+              <tr>
+                <td>Median RUL:</td>
+                <td id="detailMedianRUL">-</td>
+              </tr>
+              <tr>
+                <td>Min RUL:</td>
+                <td id="minRUL">-</td>
+              </tr>
+              <tr>
+                <td>Max RUL:</td>
+                <td id="maxRUL">-</td>
+              </tr>
+              <tr>
+                <td>Range:</td>
+                <td id="rangeRUL">-</td>
+              </tr>
+              <tr>
+                <td>Std Dev:</td>
+                <td id="stdRUL">-</td>
+              </tr>
+              <tr>
+                <td>Variance:</td>
+                <td id="varianceRUL">-</td>
+              </tr>
+              <tr>
+                <td>Q1 (25%):</td>
+                <td id="q1RUL">-</td>
+              </tr>
+              <tr>
+                <td>Q3 (75%):</td>
+                <td id="q3RUL">-</td>
+              </tr>
+              <tr>
+                <td>IQR:</td>
+                <td id="iqrRUL">-</td>
+              </tr>
+              <tr>
+                <td>Healthy Count:</td>
+                <td id="healthyCount">-</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Alert Section -->
+      <div class="alert" id="alertBox" style="display: none">
+        <span class="alert-icon" id="alertIcon"></span>
+        <span class="alert-message" id="alertMessage"></span>
+        <button class="alert-close" onclick="closeAlert()">&times;</button>
+      </div>
+    </div>
+
+    <script>
+      // Load navbar
+      fetch("navbar.html")
+        .then((response) => response.text())
+        .then((data) => {
+          document.getElementById("navbar-container").innerHTML = data;
+        });
+
+      // Theme Toggle Functionality
+      (function () {
+        const themeToggle = document.getElementById("themeToggle");
+        const themeIcon = document.getElementById("themeIcon");
+        const root = document.documentElement;
+
+        // Load saved theme or default to light
+        const savedTheme = localStorage.getItem("theme") || "light";
+        root.setAttribute("data-theme", savedTheme);
+        themeIcon.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+
+        themeToggle.addEventListener("click", () => {
+          const currentTheme = root.getAttribute("data-theme");
+          const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+          root.setAttribute("data-theme", newTheme);
+          localStorage.setItem("theme", newTheme);
+          themeIcon.textContent = newTheme === "dark" ? "☀️" : "🌙";
+        });
+
+        // Dropdown functionality
+        document.querySelectorAll(".dropdown-toggle").forEach((toggle) => {
+          toggle.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const parent = this.parentElement;
+            const isOpen = parent.classList.contains("active");
+
+            // Close all dropdowns
+            document
+              .querySelectorAll(".nav-dropdown")
+              .forEach((d) => d.classList.remove("active"));
+
+            // Toggle current dropdown
+            if (!isOpen) {
+              parent.classList.add("active");
+            }
+          });
+        });
+
+        // Submenu functionality
+        document.querySelectorAll(".submenu-toggle").forEach((toggle) => {
+          toggle.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const parent = this.parentElement;
+            parent.classList.toggle("active");
+          });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener("click", () => {
+          document
+            .querySelectorAll(".nav-dropdown")
+            .forEach((d) => d.classList.remove("active"));
+          document
+            .querySelectorAll(".dropdown-submenu")
+            .forEach((d) => d.classList.remove("active"));
+        });
+      })();
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>

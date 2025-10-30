@@ -1,0 +1,16 @@
+# Environment variables
+.env
+.env.local
+
+# Caches
+*.cache
+.cache/
+__pycache__/
+.pytest_cache/
+
+.venv/
+.venv
+
+
+.idea
+.idea/

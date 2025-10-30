@@ -32,25 +32,56 @@ const contentData = {
   },
 
   aboutUs: {
-    title: "About Us",
-    content: `
-      <p>We are a team of engineers and data scientists passionate about revolutionizing industrial maintenance through artificial intelligence and machine learning.</p>
-      
-      <h2>Our Mission</h2>
-      <p>To provide accessible, accurate, and actionable predictive maintenance solutions that help industries reduce downtime, minimize costs, and improve operational efficiency.</p>
-      
-      <h2>Our Team</h2>
-      <p>Our multidisciplinary team combines expertise in mechanical engineering, data science, and software development to create cutting-edge predictive maintenance solutions.</p>
-      
-      <h2>Why Choose Us?</h2>
-      <ul>
-        <li>Advanced AI models trained on real-world industrial data</li>
-        <li>User-friendly interface requiring no technical expertise</li>
-        <li>Fast and accurate predictions</li>
-        <li>Comprehensive analytics and visualizations</li>
-      </ul>
-    `,
-  },
+  title: "About Us",
+  content: `
+    <p>We are a team of AI engineers and data scientists passionate about revolutionizing industrial maintenance through artificial intelligence and machine learning.</p>
+
+    <h2>Our Mission</h2>
+    <p>To provide accessible, accurate, and actionable predictive maintenance solutions that help industries reduce downtime, minimize costs, and improve operational efficiency.</p>
+
+    <h2>Our Team</h2>
+    <p>Our multidisciplinary team combines expertise in mechanical engineering, data science, and software development to create cutting-edge predictive maintenance solutions.</p>
+
+    <div class="team">
+      <div class="member">
+        <img src="https://via.placeholder.com/150" alt="Member 1" />
+        <h3>Arin Thamke</h3>
+        <p>Ai Engineer, Data Scientist and React Developer</p>
+        <p>A versatile professional skilled in AI Engineering, Data Science, and React Development, combining expertise in machine learning model design, data analysis, and front-end development. Proficient in building intelligent systems that process complex datasets, extract actionable insights, and present them through responsive, user-friendly web interfaces—bridging the gap between data-driven intelligence and real-world usability.</p>
+      </div>
+
+      <div class="member">
+        <img src="https://via.placeholder.com/150" alt="Member 2" />
+        <h3>Sarah Lee</h3>
+        <p>Data Scientist</p>
+        <p>Expert in industrial data preprocessing, feature engineering, and analytics visualization.</p>
+      </div>
+
+      <div class="member">
+        <img src="https://via.placeholder.com/150" alt="Member 3" />
+        <h3>Michael Chen</h3>
+        <p>Mechanical Systems Specialist</p>
+        <p>Bridges the gap between engineering systems and AI-based maintenance models.</p>
+      </div>
+
+      <div class="member">
+        <img src="https://via.placeholder.com/150" alt="Member 4" />
+        <h3>Priya Sharma</h3>
+        <p>Software Developer</p>
+        <p>Develops robust backend systems and integrates AI models with scalable web applications.</p>
+      </div>
+    </div>
+
+    <h2>Why Choose Us?</h2>
+    <ul>
+      <li>Advanced AI models trained on real-world industrial data</li>
+      <li>User-friendly interface requiring no technical expertise</li>
+      <li>Fast and accurate predictions</li>
+      <li>Comprehensive analytics and visualizations</li>
+    </ul>
+  `,
+},
+
 
   aboutModal: {
     title: "About the Model",

@@ -4,6 +4,9 @@ let healthDistributionChart = null;
 let rulHistogramChart = null;
 let urgencyChart = null;
 
+// Global variable to store all classification results
+let allClassificationResults = {};
+
 // ==================== FILE INPUT HANDLERS ====================
 
 // Misalignment file inputs
@@ -52,7 +55,9 @@ document
     await handleFormSubmission("bpfi");
   });
 
-// Generic form submission handler
+// ==================== RUL PREDICTION HANDLERS ====================
+
+// Generic form submission handler for RUL prediction
 async function handleFormSubmission(modelType) {
   const tempFileId = `${modelType}TempFile`;
   const vibFileId = `${modelType}VibFile`;
@@ -112,12 +117,12 @@ async function handleFormSubmission(modelType) {
   }
 }
 
-// ==================== DISPLAY RESULTS ====================
+// ==================== DISPLAY RUL RESULTS ====================
 
 function displayResults(data) {
   console.log("Displaying results:", data);
 
-  const { predictions, statistics } = data;
+  const { predictions, statistics, classifications } = data;
 
   // Validate data
   if (!predictions || !statistics) {
@@ -135,6 +140,14 @@ function displayResults(data) {
   modelBadge.className = `model-badge model-badge-${
     statistics.model_type || "misalign"
   }`;
+
+  // Display classification results if available
+  if (classifications && Object.keys(classifications).length > 0) {
+    displayClassificationCards(classifications);
+  } else {
+    // Hide classification section if no results
+    document.getElementById("classificationSection").style.display = "none";
+  }
 
   // Show sections
   document.getElementById("statsSection").style.display = "grid";
@@ -208,6 +221,101 @@ function displayResults(data) {
       `⚠️ WARNING: ${severeCount} sequences in severe condition. Plan maintenance soon.`
     );
   }
+}
+
+// ==================== DISPLAY CLASSIFICATION CARDS ====================
+
+function displayClassificationCards(classifications) {
+  const classificationSection = document.getElementById(
+    "classificationSection"
+  );
+  const cardsContainer = document.getElementById("classificationCards");
+
+  if (!classifications || Object.keys(classifications).length === 0) {
+    classificationSection.style.display = "none";
+    return;
+  }
+
+  classificationSection.style.display = "block";
+  cardsContainer.innerHTML = "";
+
+  // Model display order and names
+  const modelOrder = ["random_forest", "xgboost", "dnn"];
+  const modelNames = {
+    random_forest: "Random Forest",
+    xgboost: "XGBoost",
+    dnn: "Deep Neural Network",
+  };
+
+  // Display each model's results
+  modelOrder.forEach((modelKey) => {
+    const result = classifications[modelKey];
+    if (!result) return;
+
+    // Determine severity class for styling
+    let severityClass = "normal";
+    let severityIcon = "✅";
+
+    if (result.fault_type !== "Normal") {
+      if (result.maintenance_recommendation.includes("CRITICAL")) {
+        severityClass = "critical";
+        severityIcon = "🚨";
+      } else if (result.maintenance_recommendation.includes("WARNING")) {
+        severityClass = "warning";
+        severityIcon = "⚠️";
+      } else {
+        severityClass = "caution";
+        severityIcon = "⚡";
+      }
+    }
+
+    // Create card HTML
+    const card = document.createElement("div");
+    card.className = `classification-card ${severityClass}`;
+    card.innerHTML = `
+      <div class="classification-header">
+        <h3>🤖 ${modelNames[modelKey]}</h3>
+        <span class="confidence-badge">
+          ${(result.confidence * 100).toFixed(1)}% Confidence
+        </span>
+      </div>
+      
+      <div class="classification-body">
+        <div class="classification-item">
+          <span class="item-label">Predicted Class</span>
+          <span class="item-value class-name">${result.predicted_class}</span>
+        </div>
+        
+        <div class="classification-item">
+          <span class="item-label">Fault Type</span>
+          <span class="item-value fault-type">${result.fault_description}</span>
+        </div>
+        
+        <div class="classification-item">
+          <span class="item-label">Severity</span>
+          <span class="item-value severity-badge severity-${severityClass}">
+            ${severityIcon} ${result.severity}
+          </span>
+        </div>
+        
+        <div class="classification-item full-width">
+          <span class="item-label">Maintenance Action</span>
+          <div class="maintenance-box">
+            <p>${result.maintenance_recommendation}</p>
+          </div>
+        </div>
+        
+        <div class="classification-stats">
+          <div class="stat-small">
+            <span class="stat-label">Segments Analyzed</span>
+            <span class="stat-value">${result.total_segments_analyzed}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    cardsContainer.appendChild(card);
+  });
 }
 
 // ==================== CREATE CHARTS ====================

@@ -71,7 +71,10 @@
       <!-- Header -->
       <header class="header">
         <h1>⚙️ Predictive Maintenance Dashboard</h1>
-        <p>Upload sensor data to predict remaining useful life (RUL)</p>
+        <p>
+          Upload sensor data to predict remaining useful life (RUL) or classify
+          bearing faults
+        </p>
       </header>
 
       <!-- Upload Sections Container -->
@@ -187,6 +190,18 @@
       <div class="model-info" id="modelInfo" style="display: none">
         <span class="model-badge" id="modelBadge"></span>
       </div>
+
+      <!-- Classification Results Section -->
+      <section
+        class="classification-results-section"
+        id="classificationSection"
+        style="display: none"
+      >
+        <h2 class="section-title">🔍 Fault Classification Results</h2>
+        <div class="classification-cards-grid" id="classificationCards">
+          <!-- Classification cards will be inserted here by JavaScript -->
+        </div>
+      </section>
 
       <!-- Statistics Cards -->
       <section class="stats-section" id="statsSection" style="display: none">
@@ -328,13 +343,6 @@
     </div>
 
     <script>
-      // Load navbar
-      fetch("navbar.html")
-        .then((response) => response.text())
-        .then((data) => {
-          document.getElementById("navbar-container").innerHTML = data;
-        });
-
       // Theme Toggle Functionality
       (function () {
         const themeToggle = document.getElementById("themeToggle");

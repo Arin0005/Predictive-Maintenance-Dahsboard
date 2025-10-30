@@ -9,6 +9,9 @@ from tensorflow import keras
 import os
 import traceback
 
+# Import classification module
+from classify import classify_bearing
+
 app = Flask(__name__)
 CORS(app)
 
@@ -21,19 +24,19 @@ class Config:
     SEQUENCE_LENGTH = 10
     
     # Misalignment Model
-    MISALIGN_MODEL_PATH = 'misalign/misalign_predictive_maintenance_model.h5'
-    MISALIGN_SCALER_X_PATH = 'misalign/scaler_X.pkl'
-    MISALIGN_SCALER_Y_PATH = 'misalign/scaler_y.pkl'
+    MISALIGN_MODEL_PATH = r'misalign\misalign_predictive_maintenance_model.h5'
+    MISALIGN_SCALER_X_PATH = r'misalign\scaler_X.pkl'
+    MISALIGN_SCALER_Y_PATH = r'misalign\scaler_y.pkl'
     
     # BPFI Model
-    BPFI_MODEL_PATH = 'BPFI/predictive_maintenance_model.h5'
-    BPFI_SCALER_X_PATH = 'BPFI/scaler_X.pkl'
-    BPFI_SCALER_Y_PATH = 'BPFI/scaler_y.pkl'
+    BPFI_MODEL_PATH = r'BPFI\predictive_maintenance_model.h5'
+    BPFI_SCALER_X_PATH = r'BPFI\scaler_X.pkl'
+    BPFI_SCALER_Y_PATH = r'BPFI\scaler_y.pkl'
 
 config = Config()
 
-# Load models and scalers at startup
-print("Loading models and scalers...")
+# Load RUL prediction models and scalers at startup
+print("Loading RUL prediction models and scalers...")
 models = {}
 scalers = {}
 
@@ -42,9 +45,9 @@ try:
     models['misalign'] = keras.models.load_model(config.MISALIGN_MODEL_PATH, compile=False)
     scalers['misalign_X'] = joblib.load(config.MISALIGN_SCALER_X_PATH)
     scalers['misalign_y'] = joblib.load(config.MISALIGN_SCALER_Y_PATH)
-    print("Misalignment model loaded successfully!")
+    print(f"  Misalignment model loaded (expects {scalers['misalign_X'].n_features_in_} features)")
 except Exception as e:
-    print(f"Error loading misalignment model: {e}")
+    print(f"   Error loading misalignment model: {e}")
     models['misalign'] = None
 
 try:
@@ -52,12 +55,12 @@ try:
     models['bpfi'] = keras.models.load_model(config.BPFI_MODEL_PATH, compile=False)
     scalers['bpfi_X'] = joblib.load(config.BPFI_SCALER_X_PATH)
     scalers['bpfi_y'] = joblib.load(config.BPFI_SCALER_Y_PATH)
-    print("BPFI model loaded successfully!")
+    print(f"  BPFI model loaded (expects {scalers['bpfi_X'].n_features_in_} features)")
 except Exception as e:
-    print(f"Error loading BPFI model: {e}")
+    print(f"   Error loading BPFI model: {e}")
     models['bpfi'] = None
 
-# ==================== HELPER FUNCTIONS ====================
+# ==================== HELPER FUNCTIONS FOR RUL PREDICTION ====================
 
 def resample_signal(signal_data, original_freq, target_freq):
     """Resample signal from original frequency to target frequency"""
@@ -84,12 +87,13 @@ def preprocess_dataframe(df):
     
     df_resampled = pd.DataFrame(resampled_data)
     df_resampled = df_resampled.replace([np.inf, -np.inf], np.nan)
-    df_resampled = df_resampled.fillna(method='ffill').fillna(method='bfill')
+    # Fix deprecation warning
+    df_resampled = df_resampled.ffill().bfill()
     
     return df_resampled
 
 def extract_time_domain_features(window):
-    """Extract time-domain features"""
+    """Extract time-domain features for RUL prediction"""
     features = {}
     features['mean'] = np.mean(window)
     features['std'] = np.std(window)
@@ -102,7 +106,7 @@ def extract_time_domain_features(window):
     return features
 
 def extract_frequency_domain_features(window, fs=1000):
-    """Extract frequency-domain features"""
+    """Extract frequency-domain features for RUL prediction"""
     features = {}
     
     fft_vals = np.fft.fft(window)
@@ -122,7 +126,7 @@ def extract_frequency_domain_features(window, fs=1000):
     return features
 
 def create_windowed_features(df_temp, df_vib):
-    """Create windowed features from sensor data"""
+    """Create windowed features from sensor data for RUL prediction"""
     window_size = config.WINDOW_SIZE
     overlap = config.OVERLAP
     step_size = int(window_size * (1 - overlap))
@@ -139,14 +143,14 @@ def create_windowed_features(df_temp, df_vib):
         
         window_features = {}
         
-        # Temperature features
+        # Temperature features (time-domain only for RUL)
         for col in df_temp.columns:
             temp_window = df_temp[col].values[start_idx:end_idx]
             time_feats = extract_time_domain_features(temp_window)
             for feat_name, feat_val in time_feats.items():
                 window_features[f'temp_{col}_{feat_name}'] = feat_val
         
-        # Vibration features
+        # Vibration features (time + freq domain for RUL)
         for col in df_vib.columns:
             vib_window = df_vib[col].values[start_idx:end_idx]
             time_feats = extract_time_domain_features(vib_window)
@@ -170,7 +174,7 @@ def classify_health_state(rul):
         return 'Critical', 'Critical'
 
 def process_and_predict(df_temp, df_vib, model_type='misalign'):
-    """Complete pipeline: preprocess, extract features, predict"""
+    """Complete pipeline: preprocess, extract features, predict RUL"""
     
     # Select appropriate model and scalers
     model = models.get(model_type)
@@ -180,30 +184,66 @@ def process_and_predict(df_temp, df_vib, model_type='misalign'):
     if model is None or scaler_X is None or scaler_y is None:
         raise ValueError(f"Model '{model_type}' not loaded properly")
     
+    print(f"\n{'='*60}")
+    print(f"RUL PREDICTION PIPELINE ({model_type.upper()})")
+    print(f"{'='*60}")
+    
     # Step 1: Preprocess
+    print("Step 1: Preprocessing data...")
     df_temp_resampled = preprocess_dataframe(df_temp)
     df_vib_resampled = preprocess_dataframe(df_vib)
+    print(f"  Temp shape after resample: {df_temp_resampled.shape}")
+    print(f"  Vib shape after resample: {df_vib_resampled.shape}")
     
     # Step 2: Extract features
+    print("\nStep 2: Extracting features...")
     feature_df = create_windowed_features(df_temp_resampled, df_vib_resampled)
+    print(f"  Feature DataFrame shape: {feature_df.shape}")
+    print(f"  Number of features extracted: {feature_df.shape[1]}")
+    print(f"  Model expects: {scaler_X.n_features_in_} features")
+    
+    # Check feature count match
+    if feature_df.shape[1] != scaler_X.n_features_in_:
+        print(f"\n  WARNING: Feature mismatch!")
+        print(f"  Extracted: {feature_df.shape[1]} features")
+        print(f"  Expected: {scaler_X.n_features_in_} features")
+        print(f"  Difference: {feature_df.shape[1] - scaler_X.n_features_in_}")
+        
+        # Try to fix by selecting or padding features
+        if feature_df.shape[1] > scaler_X.n_features_in_:
+            print(f"  → Trimming to first {scaler_X.n_features_in_} features")
+            feature_df = feature_df.iloc[:, :scaler_X.n_features_in_]
+        else:
+            print(f"  → Padding with zeros to {scaler_X.n_features_in_} features")
+            padding = pd.DataFrame(
+                np.zeros((feature_df.shape[0], scaler_X.n_features_in_ - feature_df.shape[1])),
+                columns=[f'pad_{i}' for i in range(scaler_X.n_features_in_ - feature_df.shape[1])]
+            )
+            feature_df = pd.concat([feature_df, padding], axis=1)
     
     # Step 3: Create sequences
+    print("\nStep 3: Creating sequences...")
     X = feature_df.values
     X_sequences = []
     for i in range(len(X) - config.SEQUENCE_LENGTH + 1):
         X_sequences.append(X[i:i+config.SEQUENCE_LENGTH])
     X_sequences = np.array(X_sequences)
+    print(f"  Sequence shape: {X_sequences.shape}")
     
     # Step 4: Scale features
+    print("\nStep 4: Scaling features...")
     X_reshaped = X_sequences.reshape(-1, X_sequences.shape[-1])
-    print(f"Feature shape before scaling: {X_reshaped.shape}")
     X_scaled = scaler_X.transform(X_reshaped)
     X_test_scaled = X_scaled.reshape(X_sequences.shape)
-    print(f"Feature shape after scaling: {X_test_scaled.shape}")
+    print(f"  Scaled shape: {X_test_scaled.shape}")
     
     # Step 5: Predict
+    print("\nStep 5: Predicting RUL...")
     y_pred_scaled = model.predict(X_test_scaled, verbose=0)
     y_pred = scaler_y.inverse_transform(y_pred_scaled).flatten()
+    print(f"  Predictions generated: {len(y_pred)} sequences")
+    print(f"  RUL range: {y_pred.min():.1f} - {y_pred.max():.1f} minutes")
+    print(f"{'='*60}\n")
     
     return y_pred, feature_df
 
@@ -271,7 +311,7 @@ def health_check():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Handle prediction request"""
+    """Handle RUL prediction and classification request"""
     try:
         # Get model type
         model_type = request.form.get('model_type', 'misalign')
@@ -297,14 +337,17 @@ def predict():
         df_temp = pd.read_csv(temp_file)
         df_vib = pd.read_csv(vib_file)
         
-        print(f"Loaded temp data: {df_temp.shape}")
-        print(f"Loaded vib data: {df_vib.shape}")
+        print(f"\n{'='*60}")
+        print(f"NEW PREDICTION REQUEST")
+        print(f"{'='*60}")
+        print(f"Temp data shape: {df_temp.shape}")
+        print(f"Vib data shape: {df_vib.shape}")
         print(f"Model type: {model_type}")
         
-        # Process and predict
+        # Process and predict RUL
         y_pred, feature_df = process_and_predict(df_temp, df_vib, model_type)
         
-        # Create results
+        # Create RUL results
         sequence_indices = np.arange(len(y_pred))
         rul_minutes = y_pred.tolist()
         rul_hours = (y_pred / 60).tolist()
@@ -343,7 +386,32 @@ def predict():
             'model_type': model_type
         }
         
-        print(f"Statistics calculated: {stats_data}")
+        # Run classification on the same data
+        print(f"\n{'='*60}")
+        print("RUNNING CLASSIFICATION...")
+        print(f"{'='*60}")
+        
+        classification_results = {}
+        try:
+            # Reset file pointers and read again for classification
+            temp_file.seek(0)
+            vib_file.seek(0)
+            df_temp_classify = pd.read_csv(temp_file)
+            df_vib_classify = pd.read_csv(vib_file)
+            
+            classification_results = classify_bearing(df_temp_classify, df_vib_classify)
+            
+            if classification_results:
+                print(f"  Classification completed successfully!")
+                print(f"  Models used: {', '.join(classification_results.keys())}")
+            else:
+                print("  Classification returned no results")
+                
+        except Exception as e:
+            print(f"   Classification failed: {str(e)}")
+            print(traceback.format_exc())
+            # Don't fail the entire request if classification fails
+            classification_results = {}
         
         # Prepare response
         response = {
@@ -356,14 +424,24 @@ def predict():
                 'maintenance_urgency': maintenance_urgency
             },
             'statistics': stats_data,
+            'classifications': classification_results,
             'message': f'Predictions generated successfully using {model_type} model'
         }
+        
+        print(f"\n{'='*60}")
+        print("REQUEST COMPLETED SUCCESSFULLY")
+        print(f"{'='*60}\n")
         
         return jsonify(response)
     
     except Exception as e:
-        print(f"Error during prediction: {str(e)}")
+        print(f"\n{'='*60}")
+        print("ERROR DURING PREDICTION")
+        print(f"{'='*60}")
+        print(f"Error: {str(e)}")
         print(traceback.format_exc())
+        print(f"{'='*60}\n")
+        
         return jsonify({
             'success': False,
             'error': str(e),

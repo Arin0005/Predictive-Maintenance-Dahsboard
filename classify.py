@@ -12,6 +12,7 @@ from scipy.fft import fft, fftfreq
 import joblib
 import os
 import warnings
+from pathlib import Path
 
 # Suppress warnings
 warnings.filterwarnings('ignore', category=UserWarning)
@@ -33,10 +34,10 @@ class BearingClassifier:
         try:
             # Define paths to ensemble model files
             ENSEMBLE_DIR = 'ensemble'
-            MODEL_PATH = r"ensemble/ensemble_bearing_fault_classifier.pkl"
-            SCALER_PATH = r"ensemble/ensemble_feature_scaler.pkl"
-            ENCODER_PATH = r"ensemble/ensemble_label_encoder.pkl"
-            FEATURES_PATH = r"ensemble/ensemble_feature_columns.pkl"
+            MODEL_PATH = Path("ensemble")/"ensemble_bearing_fault_classifier.pkl"
+            SCALER_PATH = Path("ensemble")/"ensemble_feature_scaler.pkl"
+            ENCODER_PATH = Path("ensemble")/"ensemble_label_encoder.pkl"
+            FEATURES_PATH = Path("ensemble")/"ensemble_feature_columns.pkl"
 
             print("\n" + "="*60)
             print("LOADING ENSEMBLE CLASSIFICATION MODEL")

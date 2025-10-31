@@ -10,6 +10,7 @@ import tensorflow as tf
 from tensorflow import keras
 import os
 import traceback
+from pathlib import Path
 
 # Import classification module
 from classify import classify_bearing
@@ -26,14 +27,14 @@ class Config:
     SEQUENCE_LENGTH = 10
     
     # Misalignment Model
-    MISALIGN_MODEL_PATH = r'misalign\misalign_predictive_maintenance_model.h5'
-    MISALIGN_SCALER_X_PATH = r'misalign\scaler_X.pkl'
-    MISALIGN_SCALER_Y_PATH = r'misalign\scaler_y.pkl'
-    
+    MISALIGN_MODEL_PATH = Path('misalign')/"misalign_predictive_maintenance_model.h5"
+    MISALIGN_SCALER_X_PATH = Path('misalign')/'scaler_X.pkl'
+    MISALIGN_SCALER_Y_PATH = Path('misalign')/'scaler_y.pkl'
+
     # BPFI Model
-    BPFI_MODEL_PATH = r'BPFI\predictive_maintenance_model.h5'
-    BPFI_SCALER_X_PATH = r'BPFI\scaler_X.pkl'
-    BPFI_SCALER_Y_PATH = r'BPFI\scaler_y.pkl'
+    BPFI_MODEL_PATH = Path('BPFI')/'predictive_maintenance_model.h5'
+    BPFI_SCALER_X_PATH = Path('BPFI')/'scaler_X.pkl'
+    BPFI_SCALER_Y_PATH = Path('BPFI')/'scaler_y.pkl'
 
 config = Config()
 

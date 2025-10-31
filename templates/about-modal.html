@@ -3,140 +3,390 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>About Model - V0 AI Predictive Maintenance</title>
+    <title>Unified Predictive Maintenance System - V0 AI</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
   </head>
   <body>
-    <!-- Include Navbar -->
-    <nav class="top-nav">
-      <div class="nav-left">
-        <div class="brand">
-          <div class="brand-text">
-            <div class="brand-title">V0 AI</div>
-            <div class="brand-sub">Predictive Maintenance</div>
-          </div>
+  <!-- Include Navbar (unchanged) -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <div class="brand">
+        <div class="brand-text">
+          <div class="brand-title">V0 AI</div>
+          <div class="brand-sub">Predictive Maintenance</div>
         </div>
       </div>
+    </div>
 
-      <div class="nav-center">
-        <a href="/" class="nav-link">FAQ</a>
+    <div class="nav-center">
+      <a href="/faq" class="nav-link">FAQ</a>
 
-        <!-- About Dropdown -->
-        <div class="nav-dropdown">
-          <button class="nav-link dropdown-toggle">About ▾</button>
-          <div class="dropdown-menu">
-            <a href="/about-us" class="dropdown-item">About Us</a>
-            <div class="dropdown-submenu">
-              <button class="dropdown-item submenu-toggle">
-                About Project ›
-              </button>
-              <div class="submenu-content">
-                <a href="/about-modal" class="dropdown-item">About Model</a>
-                <a href="/modal-evaluation" class="dropdown-item"
-                  >Model Evaluation</a
-                >
-                <a href="/data-collection" class="dropdown-item"
-                  >Data Collection</a
-                >
-              </div>
+      <!-- About Dropdown -->
+      <div class="nav-dropdown">
+        <button class="nav-link dropdown-toggle">About ▾</button>
+        <div class="dropdown-menu">
+          <a href="/about-us" class="dropdown-item">About Us</a>
+          <div class="dropdown-submenu">
+            <button class="dropdown-item submenu-toggle">
+              About Project ›
+            </button>
+            <div class="submenu-content">
+              <a href="/about-modal" class="dropdown-item">About Model</a>
+              <a href="/modal-evaluation" class="dropdown-item">Model Evaluation</a>
+              <a href="/data-collection" class="dropdown-item">Data Collection</a>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- More Dropdown -->
-        <div class="nav-dropdown">
-          <button class="nav-link dropdown-toggle">More ▾</button>
-          <div class="dropdown-menu">
-            <a href="/maintenance-evolution" class="dropdown-item"
-              >Maintenance Evolution</a
-            >
-            <a href="/future-scope" class="dropdown-item">Future Scope</a>
-          </div>
+      <!-- More Dropdown -->
+      <div class="nav-dropdown">
+        <button class="nav-link dropdown-toggle">More ▾</button>
+        <div class="dropdown-menu">
+          <a href="/maintenance-evolution" class="dropdown-item">Maintenance Evolution</a>
+          <a href="/future-scope" class="dropdown-item">Future Scope</a>
         </div>
       </div>
+    </div>
 
-      <div class="nav-right">
-        <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">
-          <span id="themeIcon">🌙</span>
-        </button>
-        <a href="/trymodel" class="btn-try">TRY MODEL</a>
+    <div class="nav-right">
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">
+        <span id="themeIcon">🌙</span>
+      </button>
+      <a href="/trymodel" class="btn-try">TRY MODEL</a>
+    </div>
+  </nav>
+
+  <!-- Main Content: Model Overview and Sections -->
+  <main class="main-content" id="main-content">
+  <!-- OVERVIEW SECTION -->
+  <section class="hero hero-section" id="overview">
+    <div class="hero-left">
+      <h1>⚙️ Unified Predictive Maintenance System – CNN-LSTM Hybrid Model</h1>
+      <p class="lead">
+        A multi-task deep learning framework for <strong>predictive maintenance</strong>, designed to perform both <strong>fault classification</strong> (Normal, Misalignment, BPFI) and <strong>Remaining Useful Life (RUL)</strong> prediction. It integrates <strong>CNN</strong> (for spatial pattern learning) and <strong>LSTM</strong> (for temporal dynamics) into a unified architecture that represents the cutting edge of maintenance AI technology.
+      </p>
+    </div>
+    <div class="hero-art">
+      <div class="placeholder-art">
+       <img src="static/images/668ebf30aba6a300013ba1bc-mechanical-vibration-graphs.jpg">
       </div>
-    </nav>
+    </div>
+  </section>
 
-    <!-- Main Content -->
-    <main class="content-page">
-      <h1 id="page-title">About the Model</h1>
-      <div id="page-content"></div>
-    </main>
+  <!-- CORE FUNCTIONAL MODULES -->
+  <section class="hero hero-section" id="core-modules">
+    <div class="hero-left">
+      <h1>🧩 Core Functional Modules</h1>
+      <p class="lead">
+        Our system implements a comprehensive pipeline from data acquisition to deployment, with specialized modules handling each stage of the predictive maintenance workflow. Each module is optimized for industrial sensor data and real-world maintenance scenarios.
+      </p>
+    </div>
+    <div class="hero-art">
+      <div class="placeholder-art">
+        <img src="static/images/additional_analysis.png">
+      </div>
+    </div>
+  </section>
 
-    <script src="{{ url_for('static', filename='content-data.js') }}"></script>
-    <script>
-      // Load content
-      const pageData = contentData.aboutModal;
-      document.getElementById("page-title").textContent = pageData.title;
-      document.getElementById("page-content").innerHTML = pageData.content;
+  <section class="features" aria-labelledby="core-modules-features">
+    <div class="feature-card"><h3>🔧 Configuration & Data Loading</h3><p>Centralized Config Class manages file paths, parameters, and hyperparameters. Unified data loading from multiple sensors.</p></div>
+    <div class="feature-card"><h3>🧼 Data Preprocessing</h3><p>Signal resampling from 25.6 kHz to 1 kHz, timestamp removal, missing value handling, and data sanitization.</p></div>
+    <div class="feature-card"><h3>⚙️ Feature Engineering</h3><p>Time-domain statistics and frequency-domain FFT features with 2000-sample sliding windows.</p></div>
+    <div class="feature-card"><h3>🧠 Synthetic Data Generation</h3><p>Degradation path simulation and data augmentation for balanced dataset creation.</p></div>
+    <div class="feature-card"><h3>🏗️ Model Architecture</h3><p>CNN layers for spatial patterns + LSTM layers for temporal dynamics with multi-task output heads.</p></div>
+    <div class="feature-card"><h3>🚀 Inference & Deployment</h3><p>Complete deployment package with model, scalers, metrics, and architecture documentation.</p></div>
+  </section>
 
-      // Theme Toggle Functionality
-      (function () {
-        const themeToggle = document.getElementById("themeToggle");
-        const themeIcon = document.getElementById("themeIcon");
-        const root = document.documentElement;
+  <div class="section-divider" aria-hidden="true"></div>
 
-        // Load saved theme or default to light
-        const savedTheme = localStorage.getItem("theme") || "light";
-        root.setAttribute("data-theme", savedTheme);
-        themeIcon.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+  <!-- HYBRID ARCHITECTURE -->
+  <section class="hero hero-section" id="hybrid-architecture">
+    <div class="hero-left">
+      <h1>🧬 CNN-LSTM Hybrid Model</h1>
+      <p class="lead">
+        Our hybrid architecture combines the strengths of convolutional and recurrent neural networks to capture both spatial patterns in sensor data and temporal degradation trends. The CNN component excels at identifying local fault signatures, while the LSTM networks model how these faults evolve over time, creating a comprehensive understanding of equipment health.
+      </p>
+    </div>
+    <div class="hero-art">
+      <div class="placeholder-art">
+        <img src="static/images/cnn+lstm.jpg">
+      </div>
+    </div>
+  </section>
 
-        themeToggle.addEventListener("click", () => {
-          const currentTheme = root.getAttribute("data-theme");
-          const newTheme = currentTheme === "dark" ? "light" : "dark";
+  <section class="features" aria-labelledby="architecture-features">
+    <div class="feature-card"><h3>🔍 CNN: Spatial Feature Extraction</h3><p>Two Conv1D layers (32 & 64 filters) with ReLU, pooling, batch normalization, and dropout for local pattern detection.</p></div>
+    <div class="feature-card"><h3>⏱️ LSTM: Temporal Modeling</h3><p>Two LSTM layers (128 & 64 units) capture long-term degradation trends with dropout regularization.</p></div>
+    <div class="feature-card"><h3>🔄 Architectural Synergy</h3><p>CNN learns localized signal features → LSTM models their temporal evolution for accurate multi-task learning.</p></div>
+  </section>
 
-          root.setAttribute("data-theme", newTheme);
-          localStorage.setItem("theme", newTheme);
-          themeIcon.textContent = newTheme === "dark" ? "☀️" : "🌙";
+  <div class="section-divider" aria-hidden="true"></div>
+
+  <!-- MULTI-TASK LEARNING -->
+  <section class="hero hero-section" id="multi-task">
+    <div class="hero-left">
+      <h1>🔗 Multi-Task Learning Strategy</h1>
+      <p class="lead">
+        Our system employs a sophisticated multi-task approach that simultaneously performs fault classification and remaining useful life prediction. Shared layers build a common feature space, while specialized heads optimize for each task. The weighted loss function prioritizes RUL accuracy (70%) while maintaining strong classification performance (30%), encouraging shared learning and implicit regularization across tasks.
+      </p>
+    </div>
+    <div class="hero-art">
+      <div class="placeholder-art">
+        <img src="static/images/Full_multitask.png">
+      </div>
+    </div>
+  </section>
+
+  <section class="features" aria-labelledby="multi-task-features">
+    <div class="feature-card"><h3>🎯 Shared Feature Space</h3><p>Common layers build unified representations for both classification and regression tasks.</p></div>
+    <div class="feature-card"><h3>⚖️ Weighted Loss Balancing</h3><p>RUL prediction weighted at 70%, fault classification at 30% for optimal task prioritization.</p></div>
+    <div class="feature-card"><h3>🔗 Condition-Aware RUL</h3><p>Classification output informs RUL predictions for context-aware remaining life estimates.</p></div>
+  </section>
+
+  <div class="section-divider" aria-hidden="true"></div>
+
+  <!-- FEATURE ENGINEERING -->
+  <section class="hero hero-section" id="feature-engineering">
+    <div class="hero-left">
+      <h1>🧮 Feature Engineering</h1>
+      <p class="lead">
+        Our system extracts comprehensive features from both time and frequency domains to capture the full spectrum of equipment health indicators. Time-domain features quantify vibration intensity and signal characteristics, while frequency-domain analysis identifies fault-specific spectral patterns that indicate developing mechanical issues.
+      </p>
+    </div>
+    <div class="hero-art">
+      <div class="placeholder-art">
+        <img src="static/images/feature-engineering.jpg">
+      </div>
+    </div>
+  </section>
+
+  <section class="features" aria-labelledby="feature-engineering-features">
+    <div class="feature-card"><h3>⏰ Time-Domain Features</h3><p>Mean, Std, RMS, Peak, Peak-to-Peak, Crest Factor, Kurtosis, Skewness for vibration analysis.</p></div>
+    <div class="feature-card"><h3>📡 Frequency-Domain Features</h3><p>Spectral Centroid, Variance, and Band Energy (100–200 Hz) for fault frequency tracking.</p></div>
+    <div class="feature-card"><h3>🪟 Windowing Strategy</h3><p>2000-sample sliding windows with 50% overlap create structured feature sequences.</p></div>
+  </section>
+
+  <div class="section-divider" aria-hidden="true"></div>
+
+  <!-- INFERENCE & DEPLOYMENT -->
+  <section class="hero hero-section" id="inference">
+    <div class="hero-left">
+      <h1>🚀 Inference & Deployment</h1>
+      <p class="lead">
+        The system provides comprehensive inference capabilities that deliver actionable maintenance insights. Our deployment package includes everything needed for production integration, from the trained model and data scalers to performance metrics and architectural documentation. The inference engine returns detailed diagnostics including fault type, confidence scores, remaining useful life estimates, and specific maintenance recommendations.
+      </p>
+    </div>
+    <div class="hero-art">
+      <div class="placeholder-art">
+        <h3>Production Ready</h3>
+        <p>Complete Deployment Package</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" aria-labelledby="inference-features">
+    <div class="feature-card"><h3>🧾 Inference Output</h3><p>Fault type, confidence, RUL estimates, health state, and maintenance recommendations.</p></div>
+    <div class="feature-card"><h3>📦 Deployment Package</h3><p>Includes model files, scalers, performance metrics, and architecture documentation.</p></div>
+    <div class="feature-card"><h3>🔧 Demo Inference</h3><p>Simulates real-time conditions from healthy to critical for testing and validation.</p></div>
+  </section>
+
+  <div class="section-divider" aria-hidden="true"></div>
+
+  <!-- KEY INNOVATIONS -->
+  <section class="hero hero-section" id="innovations">
+    <div class="hero-left">
+      <h1>💡 Key Innovations</h1>
+      <p class="lead">
+        Our unified predictive maintenance system introduces several groundbreaking innovations that advance the state of the art in maintenance AI. From synthetic data generation for limited datasets to condition-aware RUL prediction and hierarchical spatiotemporal learning, each innovation addresses critical challenges in industrial predictive maintenance.
+      </p>
+    </div>
+    <div class="hero-art">
+      <div class="placeholder-art">
+        <h3>Innovations</h3>
+        <p>Advanced ML Techniques</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" aria-labelledby="innovations-features">
+    <div class="feature-card"><h3>🔄 Unified Multi-Task Framework</h3><p>Simultaneous fault detection and RUL prediction in a single integrated system.</p></div>
+    <div class="feature-card"><h3>🎭 Synthetic Degradation Modeling</h3><p>Realistic degradation path generation for data-limited scenarios.</p></div>
+    <div class="feature-card"><h3>🔗 Condition-Aware RUL</h3><p>RUL predictions informed by real-time fault classification context.</p></div>
+    <div class="feature-card"><h3>🌐 Multi-Domain Feature Fusion</h3><p>Combined time and frequency domain analysis for comprehensive monitoring.</p></div>
+    <div class="feature-card"><h3>🏗️ Hierarchical CNN→LSTM</h3><p>Spatial-temporal architecture for optimal pattern learning.</p></div>
+    <div class="feature-card"><h3>⚖️ Weighted Multi-Task Loss</h3><p>Balanced optimization for both classification and regression objectives.</p></div>
+  </section>
+</main>
+
+  <!-- JS: read-more check, modal creation, blur background, and accessibility -->
+  <script>
+    // Smooth scroll to features (kept from original)
+    function scrollToFeatures() {
+      document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    // Theme toggle + nav behaviour (kept unchanged)
+    (function () {
+      const themeToggle = document.getElementById("themeToggle");
+      const themeIcon = document.getElementById("themeIcon");
+      const root = document.documentElement;
+
+      const savedTheme = localStorage.getItem("theme") || "light";
+      root.setAttribute("data-theme", savedTheme);
+      themeIcon.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+
+      themeToggle?.addEventListener("click", () => {
+        const currentTheme = root.getAttribute("data-theme");
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        themeIcon.textContent = newTheme === "dark" ? "☀️" : "🌙";
+      });
+
+      document.querySelectorAll(".dropdown-toggle").forEach((toggle) => {
+        toggle.addEventListener("click", function (e) {
+          e.stopPropagation();
+          const parent = this.parentElement;
+          const isOpen = parent.classList.contains("active");
+          document.querySelectorAll(".nav-dropdown").forEach((d) => d.classList.remove("active"));
+          if (!isOpen) parent.classList.add("active");
         });
+      });
 
-        // Dropdown functionality
-        document.querySelectorAll(".dropdown-toggle").forEach((toggle) => {
-          toggle.addEventListener("click", function (e) {
-            e.stopPropagation();
-            const parent = this.parentElement;
-            const isOpen = parent.classList.contains("active");
-
-            // Close all dropdowns
-            document
-              .querySelectorAll(".nav-dropdown")
-              .forEach((d) => d.classList.remove("active"));
-
-            // Toggle current dropdown
-            if (!isOpen) {
-              parent.classList.add("active");
-            }
-          });
+      document.querySelectorAll(".submenu-toggle").forEach((toggle) => {
+        toggle.addEventListener("click", function (e) {
+          e.stopPropagation();
+          this.parentElement.classList.toggle("active");
         });
+      });
 
-        // Submenu functionality
-        document.querySelectorAll(".submenu-toggle").forEach((toggle) => {
-          toggle.addEventListener("click", function (e) {
-            e.stopPropagation();
-            const parent = this.parentElement;
-            parent.classList.toggle("active");
-          });
-        });
+      document.addEventListener("click", () => {
+        document.querySelectorAll(".nav-dropdown").forEach((d) => d.classList.remove("active"));
+        document.querySelectorAll(".dropdown-submenu").forEach((d) => d.classList.remove("active"));
+      });
+    })();
 
-        // Close dropdowns when clicking outside
-        document.addEventListener("click", () => {
-          document
-            .querySelectorAll(".nav-dropdown")
-            .forEach((d) => d.classList.remove("active"));
-          document
-            .querySelectorAll(".dropdown-submenu")
-            .forEach((d) => d.classList.remove("active"));
-        });
-      })();
-    </script>
-  </body>
+    // --- Read More + Modal logic for all hero sections ---
+    document.addEventListener("DOMContentLoaded", () => {
+      const mainEl = document.getElementById("main-content");
+
+      document.querySelectorAll(".hero-section").forEach((section, idx) => {
+        const left = section.querySelector(".hero-left");
+        const lead = left.querySelector(".lead");
+
+        // Check overflow (give a small delay for fonts/images)
+        setTimeout(() => {
+          const overflowing = lead.scrollHeight > left.clientHeight + 1;
+          if (overflowing) {
+            // create a read more button (use existing btn styles)
+            const btn = document.createElement("button");
+            btn.className = "btn-primary read-more-btn";
+            btn.type = "button";
+            btn.textContent = "Read More";
+            btn.setAttribute("aria-haspopup", "dialog");
+            btn.setAttribute("aria-controls", "modal-" + (idx + 1));
+            left.appendChild(btn);
+
+            // create modal (one per section) and append to body
+            const modal = document.createElement("div");
+            modal.id = "modal-" + (idx + 1);
+            Object.assign(modal.style, {
+              display: "none",
+              position: "fixed",
+              inset: "0",
+              zIndex: 1200,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(4px)"
+            });
+            modal.setAttribute("role", "dialog");
+            modal.setAttribute("aria-modal", "true");
+
+            const modalContent = document.createElement("div");
+            Object.assign(modalContent.style, {
+              background: "var(--glass)",
+              padding: "1.6rem",
+              borderRadius: "12px",
+              maxWidth: "760px",
+              width: "90%",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              boxShadow: "var(--card-shadow)",
+              position: "relative"
+            });
+
+            // close button
+            const closeBtn = document.createElement("button");
+            closeBtn.innerHTML = "&times;";
+            closeBtn.className = "alert-close";
+            Object.assign(closeBtn.style, {
+              position: "absolute",
+              right: "12px",
+              top: "8px",
+              fontSize: "1.6rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--muted)"
+            });
+            closeBtn.setAttribute("aria-label", "Close dialog");
+
+            // populate modal title + content by cloning heading + full lead content
+            const heading = left.querySelector("h1") ? left.querySelector("h1").cloneNode(true) : null;
+            const fullLead = left.querySelector(".lead") ? left.querySelector(".lead").cloneNode(true) : null;
+
+            if (heading) modalContent.appendChild(heading);
+            if (fullLead) modalContent.appendChild(fullLead);
+            modalContent.appendChild(closeBtn);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            // open modal
+            btn.addEventListener("click", () => {
+              modal.style.display = "flex";
+              // blur & disable background scroll
+              mainEl.style.filter = "blur(4px) saturate(0.95)";
+              document.documentElement.style.overflow = "hidden";
+              // move focus into modal for accessibility
+              closeBtn.focus();
+            });
+
+            // close handlers
+            closeBtn.addEventListener("click", () => {
+              modal.style.display = "none";
+              mainEl.style.filter = "";
+              document.documentElement.style.overflow = "";
+              btn.focus();
+            });
+
+            modal.addEventListener("click", (e) => {
+              if (e.target === modal) {
+                modal.style.display = "none";
+                mainEl.style.filter = "";
+                document.documentElement.style.overflow = "";
+                btn.focus();
+              }
+            });
+
+            // close on Escape
+            document.addEventListener("keydown", (e) => {
+              if (e.key === "Escape" && modal.style.display === "flex") {
+                modal.style.display = "none";
+                mainEl.style.filter = "";
+                document.documentElement.style.overflow = "";
+                btn.focus();
+              }
+            });
+          }
+        }, 60);
+      });
+    });
+  </script>
+</body>
 </html>

@@ -26,8 +26,50 @@ const contentData = {
       {
         question: "What models are available?",
         answer:
-          "We currently offer two specialized models: Shaft Misalignment Analysis and Bearing Fault Inner (BPFI) Analysis. Each model is trained to detect specific types of failures.",
+          "We currently offer 3 specialized models: Shaft Misalignment Analysis and Bearing Fault Inner (BPFI) Analysis. Each model is trained to detect specific types of failures and third one to detect and classify any other fault that the prediction model isnot trained on.",
       },
+       {
+    question: "How is Predictive Maintenance different from Preventive Maintenance?",
+    answer:
+      "Preventive maintenance is time-based (e.g., servicing a machine every 6 months). Predictive maintenance is condition-based; it uses real-time data to perform maintenance only when signs of degradation appear, avoiding unnecessary downtime and parts replacement.",
+  },
+  {
+    question: "What is Condition-Based Maintenance (CBM)?",
+    answer:
+      "CBM is the foundation of PdM. It involves monitoring the actual condition of an asset (via vibration, temperature, etc.) to decide what maintenance needs to be done. Predictive Maintenance takes CBM a step further by using that condition data to forecast future failures.",
+  },
+  {
+    question: "Is Reactive Maintenance (run-to-failure) ever a good strategy?",
+    answer:
+      "For non-critical, low-cost assets with low failure consequences, a reactive approach can be cost-effective. However, for critical machinery, unexpected failures lead to high downtime costs and safety risks, making proactive strategies like PdM essential.",
+  },
+  {
+    question: "Can I use your tool alongside my existing Preventive Maintenance schedule?",
+    answer:
+      "Absolutely! Many companies use a hybrid approach. Our tool can help you optimize your PM schedule by identifying tasks that can be extended, while adding predictive alerts for failures that a time-based schedule might miss.",
+  },
+
+  // --- NEW FAQs: Fun Facts & Did You Know? ---
+  {
+    question: "Did You Know?",
+    answer:
+      "The concept of predictive maintenance is inspired by human medicine. Just as a doctor uses tests (like an EKG) to monitor your health and predict potential issues, PdM uses sensor data to monitor machine 'vitals' and forecast failures.",
+  },
+  {
+    question: "Fun Fact: The Cost of Downtime",
+    answer:
+      "In heavy industries, unplanned downtime can cost over $300,000 per hour. Predictive maintenance aims to reduce these staggering costs by over 50% by preventing failures before they happen.",
+  },
+  {
+    question: "Did You Know? Vibration Analysis is Like a Stethoscope",
+    answer:
+      "The vibration sensors used in our analysis work like a doctor's stethoscope. They listen to the 'heartbeat' of your machinery, detecting unusual patterns that signal specific faults like misalignment or bearing wear long before a total breakdown.",
+  },
+  {
+    question: "Fun Fact: From Planes to Production Lines",
+    answer:
+      "Predictive maintenance was pioneered in the aerospace and military industries. The techniques used to monitor jet engines have now been adapted and made accessible for industrial manufacturing, saving millions in maintenance costs.",
+  }
     ],
   },
 
@@ -87,10 +129,10 @@ const contentData = {
     title: "About the Model",
     content: `
       <p>Our predictive maintenance models use deep learning techniques to analyze sensor data and predict equipment failures before they occur.</p>
-      
+
       <h2>Model Architecture</h2>
       <p>We use LSTM (Long Short-Term Memory) neural networks that are particularly effective at learning patterns in time-series data. The models process sequential sensor readings to understand equipment behavior over time.</p>
-      
+
       <h2>Key Features</h2>
       <ul>
         <li>Time-domain feature extraction (mean, std, RMS, kurtosis, skewness)</li>
@@ -98,11 +140,11 @@ const contentData = {
         <li>Automated preprocessing and resampling</li>
         <li>Sequence-based predictions for improved accuracy</li>
       </ul>
-      
+
       <h2>Two Specialized Models</h2>
       <h3>Shaft Misalignment Model</h3>
       <p>Detects and predicts failures caused by shaft misalignment, a common mechanical issue that can lead to excessive vibration and premature wear.</p>
-      
+
       <h3>BPFI Model</h3>
       <p>Focuses on bearing inner race faults, analyzing specific frequency patterns associated with ball pass frequency on the inner race.</p>
     `,

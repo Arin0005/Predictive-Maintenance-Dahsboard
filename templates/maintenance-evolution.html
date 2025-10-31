@@ -62,117 +62,101 @@
 
   <!-- Main Content: 5 Sections (each with hero + 3 features + divider) -->
   <main class="main-content" id="main-content">
-    <!-- SECTION 1 -->
-    <section class="hero hero-section" id="section-1">
-      <div class="hero-left">
-        <h1>Evolution Stage 1 — Overview</h1>
-        <p class="lead">
-          Predictive maintenance evolved from reactive maintenance into an AI-driven process analyzing sensor data to forecast failures before they occur, reducing costs and downtime significantly over time. <!-- add extra text to test overflow -->
-        </p>
-        <!-- Read More button will be inserted by JS only when needed -->
-      </div>
+  <!-- STAGE 1: Reactive Maintenance -->
+  <section class="hero hero-section" id="stage-1">
+    <div class="hero-left">
+      <h1>Stage 1 — Reactive Maintenance</h1>
+      <p class="lead">
+        In this earliest form of maintenance, machines were repaired or replaced only after a failure occurred. While simple to manage, it often resulted in costly downtime, sudden breakdowns, and production losses.
+      </p>
+    </div>
+    <div class="hero-art">
+      <img src="static/images/reactive-maintenance-worker.jpg" alt="Reactive maintenance illustration" />
+    </div>
+  </section>
 
-      <div class="hero-art">
-        <img src="static/hero-1.jpg" alt="Stage 1 preview" />
-      </div>
-    </section>
+  <section class="features" aria-labelledby="stage-1-features">
+    <div class="feature-card"><h3>⚙️ Low Initial Cost</h3><p>No complex monitoring or sensors needed; suitable for low-value equipment.</p></div>
+    <div class="feature-card"><h3>🧰 Simple Operation</h3><p>Maintenance teams act only when a breakdown occurs, requiring minimal planning.</p></div>
+    <div class="feature-card"><h3>💥 Unexpected Downtime</h3><p>Failures happen without warning, disrupting production and causing delays.</p></div>
+    <div class="feature-card"><h3>💸 High Repair Expense</h3><p>Sudden breakdowns often require expensive emergency repairs or replacements.</p></div>
+    <div class="feature-card"><h3>⚠️ Safety Risk</h3><p>Machines failing mid-operation can lead to unsafe conditions for operators.</p></div>
+  </section>
 
-    <section class="features" aria-labelledby="section-1-features">
-      <div class="feature-card"><h3>🧠 Smart Analytics</h3><p>Machine learning enables pattern recognition for early anomaly detection.</p></div>
-      <div class="feature-card"><h3>📈 Continuous Monitoring</h3><p>Real-time data from sensors enhances accuracy of predictions.</p></div>
-      <div class="feature-card"><h3>⚙️ Cost Reduction</h3><p>Maintenance schedules are optimized to minimize unnecessary interventions.</p></div>
-    </section>
+  <div class="section-divider" aria-hidden="true"></div>
 
-    <div class="section-divider" aria-hidden="true"></div>
+  <!-- STAGE 2: Preventive Maintenance -->
+  <section class="hero hero-section" id="stage-2">
+    <div class="hero-left">
+      <h1>Stage 2 — Preventive Maintenance</h1>
+      <p class="lead">
+        Preventive maintenance introduced routine checks based on time or usage. Machines were serviced periodically to avoid failures, but this often caused unnecessary part replacements and higher maintenance frequency.
+      </p>
+    </div>
+    <div class="hero-art">
+      <img src="static/images/Preventive-Maintenance.jpg" alt="Preventive maintenance illustration" />
+    </div>
+  </section>
 
-    <!-- SECTION 2 -->
-    <section class="hero hero-section" id="section-2">
-      <div class="hero-left">
-        <h1>Evolution Stage 2 — Data Collection</h1>
-        <p class="lead">
-          Before predictive models, maintenance relied heavily on time-based schedules and manual inspections, which created inefficiencies and left room for unexpected failures.
-        </p>
-      </div>
+  <section class="features" aria-labelledby="stage-2-features">
+    <div class="feature-card"><h3>📅 Planned Maintenance</h3><p>Activities are scheduled in advance, minimizing surprise breakdowns.</p></div>
+    <div class="feature-card"><h3>🔧 Improved Reliability</h3><p>Regular checks ensure machines stay in acceptable working condition.</p></div>
+    <div class="feature-card"><h3>🕒 Over-Maintenance</h3><p>Components may be replaced early, wasting resources and time.</p></div>
+    <div class="feature-card"><h3>📊 Static Schedule</h3><p>Maintenance frequency is fixed and not based on real machine condition.</p></div>
+    <div class="feature-card"><h3>👷 Labor Intensive</h3><p>Still depends heavily on manual inspections and human judgment.</p></div>
+  </section>
 
-      <div class="hero-art">
-        <img src="static/hero-2.jpg" alt="Stage 2 preview" />
-      </div>
-    </section>
+  <div class="section-divider" aria-hidden="true"></div>
 
-    <section class="features" aria-labelledby="section-2-features">
-      <div class="feature-card"><h3>📅 Scheduled Checks</h3><p>Machines were serviced at fixed intervals regardless of condition.</p></div>
-      <div class="feature-card"><h3>👷 Manual Labor</h3><p>Inspections required extensive human expertise and time.</p></div>
-      <div class="feature-card"><h3>💸 High Costs</h3><p>Over-maintenance led to unnecessary part replacements and expenses.</p></div>
-    </section>
+  <!-- STAGE 3: Condition-Based Maintenance -->
+  <section class="hero hero-section" id="stage-3">
+    <div class="hero-left">
+      <h1>Stage 3 — Condition-Based Maintenance</h1>
+      <p class="lead">
+        This stage introduced continuous monitoring through sensors that track vibration, temperature, or pressure. Maintenance actions are triggered only when measurable signs of wear or faults appear.
+      </p>
+    </div>
+    <div class="hero-art">
+      <img src="static/images/maintenance-conditionnelle.jpg" alt="Condition-based maintenance illustration" />
+    </div>
+  </section>
 
-    <div class="section-divider" aria-hidden="true"></div>
+  <section class="features" aria-labelledby="stage-3-features">
+    <div class="feature-card"><h3>📡 Real-Time Monitoring</h3><p>Sensors continuously track equipment health to detect abnormal trends.</p></div>
+    <div class="feature-card"><h3>🔍 Early Fault Detection</h3><p>Issues like imbalance or overheating are identified before breakdowns.</p></div>
+    <div class="feature-card"><h3>⚙️ Optimized Maintenance</h3><p>Work is done only when data shows performance degradation, reducing cost.</p></div>
+    <div class="feature-card"><h3>💰 High Setup Cost</h3><p>Requires installation of multiple sensors and data acquisition systems.</p></div>
+    <div class="feature-card"><h3>🎓 Skilled Personnel</h3><p>Needs trained engineers to interpret sensor data and trends correctly.</p></div>
+  </section>
 
-    <!-- SECTION 3 -->
-    <section class="hero hero-section" id="section-3">
-      <div class="hero-left">
-        <h1>Evolution Stage 3 — Sensor Integration</h1>
-        <p class="lead">
-          Industrial IoT introduced vibration, temperature, and current sensors that continuously collect time-series data from machines, enabling richer analysis.
-        </p>
-      </div>
+  <div class="section-divider" aria-hidden="true"></div>
 
-      <div class="hero-art">
-        <img src="static/hero-3.jpg" alt="Stage 3 preview" />
-      </div>
-    </section>
+  <!-- STAGE 4: Predictive Maintenance -->
+  <section class="hero hero-section" id="stage-4">
+    <div class="hero-left">
+      <h1>Stage 4 — Predictive Maintenance</h1>
+      <p class="lead">
+        Predictive maintenance integrates sensor data, analytics, and machine learning to forecast failures before they happen. It maximizes uptime, optimizes resource use, and minimizes unnecessary maintenance.
+      </p>
+    </div>
+    <div class="hero-art">
+      <img src="static/images/360_F_1026443055_VOnj7pNGxfFepegOqTKtPQQAF7lJTnFi.jpg" alt="Predictive maintenance illustration" />
+    </div>
+  </section>
 
-    <section class="features" aria-labelledby="section-3-features">
-      <div class="feature-card"><h3>📊 Data Streams</h3><p>Continuous monitoring creates rich time-series datasets.</p></div>
-      <div class="feature-card"><h3>⚡ Fast Detection</h3><p>Abnormalities can be flagged in near real-time.</p></div>
-      <div class="feature-card"><h3>🌐 IoT Integration</h3><p>Devices are connected through secure industrial networks.</p></div>
-    </section>
+  <section class="features" aria-labelledby="stage-4-features">
+    <div class="feature-card"><h3>📈 Data-Driven Insight</h3><p>Uses real-time analytics to accurately predict potential equipment issues.</p></div>
+    <div class="feature-card"><h3>⏱️ Reduced Downtime</h3><p>Maintenance is done at the optimal time, keeping machines available longer.</p></div>
+    <div class="feature-card"><h3>💡 Cost Efficiency</h3><p>Minimizes both preventive and reactive maintenance expenses.</p></div>
+    <div class="feature-card"><h3>🧠 Complex Implementation</h3><p>Requires expertise in data handling, model training, and integration.</p></div>
+    <div class="feature-card"><h3>🏗️ High Infrastructure Cost</h3><p>Needs storage, computing power, and continuous data flow for accuracy.</p></div>
+  </section>
 
-    <div class="section-divider" aria-hidden="true"></div>
+  <div class="section-divider" aria-hidden="true"></div>
+</main>
 
-    <!-- SECTION 4 -->
-    <section class="hero hero-section" id="section-4">
-      <div class="hero-left">
-        <h1>Evolution Stage 4 — Modeling</h1>
-        <p class="lead">
-          Deep learning models (CNNs, LSTMs) analyze multivariate sensor data, improving failure detection and Remaining Useful Life (RUL) estimation.
-        </p>
-      </div>
 
-      <div class="hero-art">
-        <img src="static/hero-4.jpg" alt="Stage 4 preview" />
-      </div>
-    </section>
 
-    <section class="features" aria-labelledby="section-4-features">
-      <div class="feature-card"><h3>🧩 Hybrid Models</h3><p>Combination of CNNs and RNNs captures spatial-temporal features.</p></div>
-      <div class="feature-card"><h3>🔍 Fault Classification</h3><p>AI classifies fault types like misalignment and bearing issues.</p></div>
-      <div class="feature-card"><h3>🕒 RUL Estimation</h3><p>Accurately predicts Remaining Useful Life for each component.</p></div>
-    </section>
-
-    <div class="section-divider" aria-hidden="true"></div>
-
-    <!-- SECTION 5 -->
-    <section class="hero hero-section" id="section-5">
-      <div class="hero-left">
-        <h1>Evolution Stage 5 — Future Scope</h1>
-        <p class="lead">
-          The future lies in federated learning, edge computing, and autonomous scheduling that continuously adapt from live production data.
-        </p>
-      </div>
-
-      <div class="hero-art">
-        <img src="static/hero-5.jpg" alt="Stage 5 preview" />
-      </div>
-    </section>
-
-    <section class="features" aria-labelledby="section-5-features">
-      <div class="feature-card"><h3>🧠 Federated AI</h3><p>Models learn from distributed data across multiple plants securely.</p></div>
-      <div class="feature-card"><h3>🌍 Edge Processing</h3><p>Local computation reduces latency and improves real-time decisions.</p></div>
-      <div class="feature-card"><h3>🤝 Self-Maintaining Systems</h3><p>Systems adapt autonomously, reducing human intervention.</p></div>
-    </section>
-
-    <div class="section-divider" aria-hidden="true"></div>
-  </main>
 
   <!-- JS: read-more check, modal creation, blur background, and accessibility -->
   <script>

@@ -1,0 +1,28 @@
+{
+  "model_type": "Voting Ensemble",
+  "base_classifiers": [
+    "Random Forest",
+    "XGBoost",
+    "LightGBM",
+    "SVM",
+    "Gradient Boosting"
+  ],
+  "num_features": 22,
+  "num_classes": 12,
+  "classes": [
+    "BPFI_0.3mm",
+    "BPFI_1.0mm",
+    "BPFI_3.0mm",
+    "BPFO_0.3mm",
+    "BPFO_1.0mm",
+    "BPFO_3.0mm",
+    "Misalign_0.1mm",
+    "Misalign_0.3mm",
+    "Misalign_0.5mm",
+    "Normal",
+    "Unbalance_3318.0mg",
+    "Unbalance_583.0mg"
+  ],
+  "test_accuracy": 0.8197120708748615,
+  "training_date": "2025-10-30 15:59:44"
+}

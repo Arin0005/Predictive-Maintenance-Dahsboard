@@ -134,7 +134,7 @@ function displayResults(data) {
   const modelInfo = document.getElementById("modelInfo");
   const modelBadge = document.getElementById("modelBadge");
   modelInfo.style.display = "block";
-  modelBadge.textContent = `Model: ${(
+  modelBadge.textContent = `RUL Model: ${(
     statistics.model_type || "unknown"
   ).toUpperCase()}`;
   modelBadge.className = `model-badge model-badge-${
@@ -142,9 +142,11 @@ function displayResults(data) {
   }`;
 
   // Display classification results if available
+  console.log("Classifications object:", classifications);
   if (classifications && Object.keys(classifications).length > 0) {
     displayClassificationCards(classifications);
   } else {
+    console.warn("No classification results to display");
     // Hide classification section if no results
     document.getElementById("classificationSection").style.display = "none";
   }
@@ -232,90 +234,104 @@ function displayClassificationCards(classifications) {
   const cardsContainer = document.getElementById("classificationCards");
 
   if (!classifications || Object.keys(classifications).length === 0) {
+    console.log("No classifications to display");
     classificationSection.style.display = "none";
     return;
   }
 
+  console.log("Displaying classification cards for:", Object.keys(classifications));
   classificationSection.style.display = "block";
   cardsContainer.innerHTML = "";
 
-  // Model display order and names
-  const modelOrder = ["random_forest", "xgboost", "dnn"];
-  const modelNames = {
-    random_forest: "Random Forest",
-    xgboost: "XGBoost",
-    dnn: "Deep Neural Network",
-  };
+  // Check if we have ensemble results
+  if (classifications.ensemble) {
+    console.log("Found ensemble classification:", classifications.ensemble);
+    displayEnsembleCard(classifications.ensemble, cardsContainer);
+  } else {
+    console.warn("No ensemble key found in classifications");
+  }
+}
 
-  // Display each model's results
-  modelOrder.forEach((modelKey) => {
-    const result = classifications[modelKey];
-    if (!result) return;
+function displayEnsembleCard(result, container) {
+  console.log("Creating ensemble card with result:", result);
 
-    // Determine severity class for styling
-    let severityClass = "normal";
-    let severityIcon = "✅";
+  // Determine severity class for styling
+  let severityClass = "normal";
+  let severityIcon = "✅";
 
-    if (result.fault_type !== "Normal") {
-      if (result.maintenance_recommendation.includes("CRITICAL")) {
-        severityClass = "critical";
-        severityIcon = "🚨";
-      } else if (result.maintenance_recommendation.includes("WARNING")) {
-        severityClass = "warning";
-        severityIcon = "⚠️";
-      } else {
-        severityClass = "caution";
-        severityIcon = "⚡";
-      }
+  if (result.fault_type !== "Normal") {
+    if (result.maintenance_recommendation.includes("CRITICAL")) {
+      severityClass = "critical";
+      severityIcon = "🚨";
+    } else if (result.maintenance_recommendation.includes("WARNING")) {
+      severityClass = "warning";
+      severityIcon = "⚠️";
+    } else {
+      severityClass = "caution";
+      severityIcon = "⚡";
     }
+  }
 
-    // Create card HTML
-    const card = document.createElement("div");
-    card.className = `classification-card ${severityClass}`;
-    card.innerHTML = `
-      <div class="classification-header">
-        <h3>🤖 ${modelNames[modelKey]}</h3>
-        <span class="confidence-badge">
-          ${(result.confidence * 100).toFixed(1)}% Confidence
+  // Create card HTML
+  const card = document.createElement("div");
+  card.className = `classification-card ${severityClass}`;
+
+  // Build class distribution HTML if available
+  let distributionHTML = '';
+  if (result.class_distribution && Object.keys(result.class_distribution).length > 0) {
+    distributionHTML = '<div class="class-distribution"><h4>📊 Prediction Distribution:</h4><ul>';
+    for (const [className, data] of Object.entries(result.class_distribution)) {
+      distributionHTML += `<li><strong>${className}:</strong> ${data.count} segments (${data.percentage.toFixed(1)}%)</li>`;
+    }
+    distributionHTML += '</ul></div>';
+  }
+
+  card.innerHTML = `
+    <div class="classification-header">
+      <h3>🤖 ${result.model_type || 'Ensemble Model'}</h3>
+      <span class="confidence-badge">
+        ${(result.confidence * 100).toFixed(1)}% Confidence
+      </span>
+    </div>
+
+    <div class="classification-body">
+      <div class="classification-item">
+        <span class="item-label">Predicted Class</span>
+        <span class="item-value class-name">${result.predicted_class}</span>
+      </div>
+
+      <div class="classification-item">
+        <span class="item-label">Fault Type</span>
+        <span class="item-value fault-type">${result.fault_description}</span>
+      </div>
+
+      <div class="classification-item">
+        <span class="item-label">Severity</span>
+        <span class="item-value severity-badge severity-${severityClass}">
+          ${severityIcon} ${result.severity}
         </span>
       </div>
-      
-      <div class="classification-body">
-        <div class="classification-item">
-          <span class="item-label">Predicted Class</span>
-          <span class="item-value class-name">${result.predicted_class}</span>
-        </div>
-        
-        <div class="classification-item">
-          <span class="item-label">Fault Type</span>
-          <span class="item-value fault-type">${result.fault_description}</span>
-        </div>
-        
-        <div class="classification-item">
-          <span class="item-label">Severity</span>
-          <span class="item-value severity-badge severity-${severityClass}">
-            ${severityIcon} ${result.severity}
-          </span>
-        </div>
-        
-        <div class="classification-item full-width">
-          <span class="item-label">Maintenance Action</span>
-          <div class="maintenance-box">
-            <p>${result.maintenance_recommendation}</p>
-          </div>
-        </div>
-        
-        <div class="classification-stats">
-          <div class="stat-small">
-            <span class="stat-label">Segments Analyzed</span>
-            <span class="stat-value">${result.total_segments_analyzed}</span>
-          </div>
+
+      <div class="classification-item full-width">
+        <span class="item-label">Maintenance Action</span>
+        <div class="maintenance-box">
+          <p>${result.maintenance_recommendation}</p>
         </div>
       </div>
-    `;
 
-    cardsContainer.appendChild(card);
-  });
+      ${distributionHTML}
+
+      <div class="classification-stats">
+        <div class="stat-small">
+          <span class="stat-label">Total Segments Analyzed</span>
+          <span class="stat-value">${result.total_segments_analyzed}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.appendChild(card);
+  console.log("Ensemble card added to container");
 }
 
 // ==================== CREATE CHARTS ====================

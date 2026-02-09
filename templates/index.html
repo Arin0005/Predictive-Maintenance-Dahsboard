@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Unified Predictive Maintenance System -  Code-H</title>
-    <link rel="stylesheet" href="static/style.css" />
+    <title>Unified Predictive Maintenance System - Code-H</title>
+    <link rel="stylesheet" href="static\style.css" />
     <style>
       /* Fixed H3 styling */
       .main-content h3 {
@@ -19,14 +19,18 @@
       }
 
       .main-content h3::after {
-        content: '';
+        content: "";
         position: absolute;
         bottom: 0;
         left: 50%;
         transform: translateX(-50%);
         width: 80px;
         height: 3px;
-        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
         border-radius: 2px;
       }
 
@@ -45,7 +49,9 @@
         box-shadow: 0 4px 25px rgba(0, 0, 0, 0.2);
         overflow-x: auto;
         padding: 20px;
-        transition: background 0.3s, border 0.3s;
+        transition:
+          background 0.3s,
+          border 0.3s;
       }
 
       /* Table Structure */
@@ -122,7 +128,9 @@
         border-radius: 12px;
         padding: 25px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        transition:
+          transform 0.3s ease,
+          box-shadow 0.3s ease;
         border: 1px solid var(--table-border);
         min-height: 220px;
         display: flex;
@@ -274,8 +282,7 @@
           </div>
         </div>
         <div class="hero-art">
-            <img src='static/images/1st.jpg'>
-
+          <img src="static/images/1st.jpg" />
         </div>
       </section>
 
@@ -434,25 +441,56 @@
         <div class="model-cards">
           <div class="model-card">
             <h5>Bearing Fault Detection Model</h5>
-            <p>This specialized model analyzes vibration patterns to detect early signs of bearing degradation and failure. Using advanced signal processing and machine learning algorithms, it identifies characteristic frequency patterns associated with bearing faults.</p>
+            <p>
+              This specialized model analyzes vibration patterns to detect early
+              signs of bearing degradation and failure. Using advanced signal
+              processing and machine learning algorithms, it identifies
+              characteristic frequency patterns associated with bearing faults.
+            </p>
           </div>
 
           <div class="model-card">
             <h5>Misalignment Detection Model</h5>
-            <p>Our misalignment detection system monitors current signatures and temperature variations to identify shaft and coupling misalignments. This model helps prevent secondary damage and energy inefficiency caused by improper alignment.</p>
+            <p>
+              Our misalignment detection system monitors current signatures and
+              temperature variations to identify shaft and coupling
+              misalignments. This model helps prevent secondary damage and
+              energy inefficiency caused by improper alignment.
+            </p>
           </div>
 
           <div class="model-card">
             <h5>General Fault Classification Model</h5>
-            <p>This comprehensive classifier identifies other potential faults beyond bearing and misalignment issues. It analyzes multiple sensor inputs to detect anomalies and classify them into specific fault categories for targeted maintenance actions.</p>
+            <p>
+              This comprehensive classifier identifies other potential faults
+              beyond bearing and misalignment issues. It analyzes multiple
+              sensor inputs to detect anomalies and classify them into specific
+              fault categories for targeted maintenance actions.
+            </p>
           </div>
         </div>
 
         <div class="project-overview">
           <h5>Comprehensive Predictive Maintenance Solution</h5>
-          <p>Our platform integrates these three specialized models to provide a holistic predictive maintenance solution. Each model was carefully selected and trained based on extensive research into the most effective approaches for detecting specific failure modes in industrial equipment.</p>
-          <p>From data collection methodologies to model training and evaluation, every aspect of our system is designed for accuracy and reliability. We provide detailed information about our data collection processes, model selection rationale, and comprehensive evaluation metrics to ensure transparency and build trust in our predictions.</p>
-          <p>Explore our detailed documentation to understand our approach, or jump right in and try our model with your own data to experience the power of AI-driven predictive maintenance.</p>
+          <p>
+            Our platform integrates these three specialized models to provide a
+            holistic predictive maintenance solution. Each model was carefully
+            selected and trained based on extensive research into the most
+            effective approaches for detecting specific failure modes in
+            industrial equipment.
+          </p>
+          <p>
+            From data collection methodologies to model training and evaluation,
+            every aspect of our system is designed for accuracy and reliability.
+            We provide detailed information about our data collection processes,
+            model selection rationale, and comprehensive evaluation metrics to
+            ensure transparency and build trust in our predictions.
+          </p>
+          <p>
+            Explore our detailed documentation to understand our approach, or
+            jump right in and try our model with your own data to experience the
+            power of AI-driven predictive maintenance.
+          </p>
         </div>
       </div>
     </main>

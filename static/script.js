@@ -4,12 +4,15 @@ let healthDistributionChart = null;
 let rulHistogramChart = null;
 let urgencyChart = null;
 
-// Global variable to store all classification results
-let allClassificationResults = {};
+// ==================== [NEW] STREAMING STATE ====================
+// Accumulates data as SSE events arrive
+let streamedRulMinutes = [];
+let streamedIndices = [];
+let streamedHealthStates = [];
+let activeEventSource = null; // reference so we can close it if needed
 
 // ==================== FILE INPUT HANDLERS ====================
 
-// Misalignment file inputs
 document
   .getElementById("misalignTempFile")
   .addEventListener("change", function (e) {
@@ -24,7 +27,6 @@ document
     document.getElementById("misalignVibFileName").textContent = fileName;
   });
 
-// BPFI file inputs
 document
   .getElementById("bpfiTempFile")
   .addEventListener("change", function (e) {
@@ -39,7 +41,6 @@ document.getElementById("bpfiVibFile").addEventListener("change", function (e) {
 
 // ==================== FORM SUBMISSION HANDLERS ====================
 
-// Misalignment form submission
 document
   .getElementById("misalignForm")
   .addEventListener("submit", async function (e) {
@@ -47,7 +48,6 @@ document
     await handleFormSubmission("misalign");
   });
 
-// BPFI form submission
 document
   .getElementById("bpfiForm")
   .addEventListener("submit", async function (e) {
@@ -55,9 +55,8 @@ document
     await handleFormSubmission("bpfi");
   });
 
-// ==================== RUL PREDICTION HANDLERS ====================
+// ==================== [MODIFIED] FORM SUBMISSION → STREAMING ====================
 
-// Generic form submission handler for RUL prediction
 async function handleFormSubmission(modelType) {
   const tempFileId = `${modelType}TempFile`;
   const vibFileId = `${modelType}VibFile`;
@@ -82,85 +81,351 @@ async function handleFormSubmission(modelType) {
   btnText.style.display = "none";
   btnLoader.style.display = "inline-block";
 
-  // Prepare form data
+  // Close any existing stream
+  if (activeEventSource) {
+    activeEventSource.close();
+    activeEventSource = null;
+  }
+
+  // Reset streaming accumulators
+  streamedRulMinutes = [];
+  streamedIndices = [];
+  streamedHealthStates = [];
+
+  // POST files to /predict_stream via fetch, then open the SSE response
   const formData = new FormData();
   formData.append("temp_file", tempFile);
   formData.append("vib_file", vibFile);
   formData.append("model_type", modelType);
 
   try {
-    // Send request to Flask backend
-    const response = await fetch("/predict", {
+    // Use fetch to POST files; the response body IS the SSE stream
+    const response = await fetch("/predict_stream", {
       method: "POST",
       body: formData,
     });
 
-    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}`);
+    }
 
-    if (data.success) {
-      showAlert(
-        "success",
-        `Predictions generated successfully using ${modelType} model!`
-      );
-      displayResults(data);
-    } else {
-      showAlert("error", data.message || data.error || "Prediction failed");
+    // Show sections early so charts appear immediately
+    document.getElementById("statsSection").style.display = "grid";
+    document.getElementById("chartsSection").style.display = "grid";
+
+    // Show model badge
+    const modelInfo = document.getElementById("modelInfo");
+    const modelBadge = document.getElementById("modelBadge");
+    modelInfo.style.display = "block";
+    modelBadge.textContent = `RUL Model: ${modelType.toUpperCase()}`;
+    modelBadge.className = `model-badge model-badge-${modelType}`;
+
+    // Initialize empty charts
+    initEmptyCharts();
+
+    // Read SSE stream manually from the fetch response body
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSE lines end with \n\n
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop(); // keep incomplete last chunk
+
+      for (const part of parts) {
+        const line = part.trim();
+        if (!line.startsWith("data:")) continue;
+
+        const jsonStr = line.slice(5).trim();
+        let payload;
+        try {
+          payload = JSON.parse(jsonStr);
+        } catch {
+          continue;
+        }
+
+        handleSSEEvent(payload, modelType, predictBtn, btnText, btnLoader);
+      }
     }
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Streaming error:", error);
     showAlert("error", "An error occurred during prediction");
-  } finally {
-    // Reset button state
     predictBtn.disabled = false;
     btnText.style.display = "inline";
     btnLoader.style.display = "none";
   }
 }
 
-// ==================== DISPLAY RUL RESULTS ====================
+// ==================== [NEW] SSE EVENT HANDLER ====================
+
+function handleSSEEvent(payload, modelType, predictBtn, btnText, btnLoader) {
+  switch (payload.event) {
+    case "start":
+      showAlert(
+        "success",
+        `Processing ${payload.total} sequences — streaming results…`,
+      );
+      break;
+
+    case "prediction": {
+      // Append new data point
+      streamedIndices.push(payload.index);
+      streamedRulMinutes.push(payload.rul_minutes);
+      streamedHealthStates.push(payload.health_state);
+
+      // Live-update the RUL progression chart only
+      updateRULProgressionChart();
+
+      // Live-update summary stat cards
+      updateLiveStatCards();
+      break;
+    }
+
+    case "done": {
+      // Stream finished — render full statistics + classification
+      const { statistics, classifications } = payload;
+
+      // Final chart renders with complete data
+      createHealthDistributionChart(statistics);
+      createRULHistogramChart(streamedRulMinutes);
+      createUrgencyChart(statistics);
+
+      // Full stats table
+      populateStatisticsTable(statistics);
+
+      // Classification cards
+      if (classifications && Object.keys(classifications).length > 0) {
+        displayClassificationCards(classifications);
+      } else {
+        document.getElementById("classificationSection").style.display = "none";
+      }
+
+      // Alerts
+      if (statistics.critical_count > 0) {
+        showAlert(
+          "warning",
+          `🚨 CRITICAL: ${statistics.critical_count} sequences need immediate maintenance!`,
+        );
+      } else if (statistics.severe_count > 0) {
+        showAlert(
+          "warning",
+          `⚠️ WARNING: ${statistics.severe_count} sequences in severe condition. Plan maintenance soon.`,
+        );
+      } else {
+        showAlert(
+          "success",
+          `✅ Analysis complete — ${statistics.total_sequences} sequences processed.`,
+        );
+      }
+
+      // Re-enable button
+      predictBtn.disabled = false;
+      btnText.style.display = "inline";
+      btnLoader.style.display = "none";
+      break;
+    }
+
+    case "error":
+      showAlert("error", payload.message || "Prediction failed");
+      predictBtn.disabled = false;
+      btnText.style.display = "inline";
+      btnLoader.style.display = "none";
+      break;
+  }
+}
+
+// ==================== [NEW] LIVE STAT CARD UPDATER ====================
+
+function updateLiveStatCards() {
+  if (streamedRulMinutes.length === 0) return;
+
+  const mean =
+    streamedRulMinutes.reduce((a, b) => a + b, 0) / streamedRulMinutes.length;
+
+  let healthy = 0,
+    warning = 0,
+    severe = 0,
+    critical = 0;
+  for (const s of streamedHealthStates) {
+    if (s === "Healthy") healthy++;
+    else if (s === "Warning") warning++;
+    else if (s === "Severe") severe++;
+    else if (s === "Critical") critical++;
+  }
+
+  document.getElementById("totalSequences").textContent =
+    streamedRulMinutes.length;
+  document.getElementById("meanRUL").textContent = `${mean.toFixed(1)} min`;
+  document.getElementById("warningCount").textContent = warning;
+  document.getElementById("severeCount").textContent = severe;
+  document.getElementById("criticalCount").textContent = critical;
+}
+
+// ==================== [NEW] INIT EMPTY CHARTS ====================
+
+function initEmptyCharts() {
+  // Destroy existing charts
+  [
+    rulProgressionChart,
+    healthDistributionChart,
+    rulHistogramChart,
+    urgencyChart,
+  ].forEach((c) => {
+    if (c) c.destroy();
+  });
+  rulProgressionChart = null;
+  healthDistributionChart = null;
+  rulHistogramChart = null;
+  urgencyChart = null;
+
+  // Create an empty RUL progression chart so it appears instantly
+  const ctx = document.getElementById("rulProgressionChart").getContext("2d");
+  const canvas = document.getElementById("rulProgressionChart");
+  canvas.style.width = "800px";
+
+  rulProgressionChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: "Predicted RUL (minutes)",
+          data: [],
+          borderColor: "#3b82f6",
+          backgroundColor: "rgba(59, 130, 246, 0.1)",
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+        },
+      ],
+    },
+    options: rulProgressionOptions(),
+  });
+}
+
+// ==================== [NEW] LIVE CHART UPDATE ====================
+
+function updateRULProgressionChart() {
+  if (!rulProgressionChart) return;
+
+  // Dynamically widen canvas as data grows
+  const canvas = document.getElementById("rulProgressionChart");
+  const minWidth = Math.max(800, streamedIndices.length * 15);
+  canvas.style.width = `${minWidth}px`;
+
+  rulProgressionChart.data.labels = [...streamedIndices];
+  rulProgressionChart.data.datasets[0].data = [...streamedRulMinutes];
+  rulProgressionChart.update("none"); // "none" = no animation per update (smoother)
+}
+
+// ==================== CHART OPTIONS HELPER ====================
+
+function rulProgressionOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: true,
+    aspectRatio: 3,
+    animation: { duration: 300 },
+    plugins: {
+      legend: { display: true, position: "top" },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const rul = ctx.parsed.y.toFixed(2);
+            const hours = (ctx.parsed.y / 60).toFixed(2);
+            return `RUL: ${rul} min (${hours} hrs)`;
+          },
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "RUL (minutes)",
+          font: { size: 14, weight: "bold" },
+        },
+        ticks: { callback: (v) => v.toFixed(0) },
+      },
+      x: {
+        title: {
+          display: true,
+          text: "Sequence Index",
+          font: { size: 14, weight: "bold" },
+        },
+        ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 20 },
+      },
+    },
+  };
+}
+
+// ==================== POPULATE STATS TABLE ====================
+
+function populateStatisticsTable(statistics) {
+  document.getElementById("detailMeanRUL").textContent =
+    `${(statistics.mean_rul_minutes || 0).toFixed(2)} min`;
+  document.getElementById("detailMedianRUL").textContent =
+    `${(statistics.median_rul_minutes || 0).toFixed(2)} min`;
+  document.getElementById("minRUL").textContent =
+    `${(statistics.min_rul_minutes || 0).toFixed(2)} min`;
+  document.getElementById("maxRUL").textContent =
+    `${(statistics.max_rul_minutes || 0).toFixed(2)} min`;
+  document.getElementById("rangeRUL").textContent =
+    `${(statistics.range_rul_minutes || 0).toFixed(2)} min`;
+  document.getElementById("stdRUL").textContent =
+    `${(statistics.std_rul_minutes || 0).toFixed(2)} min`;
+  document.getElementById("varianceRUL").textContent =
+    `${(statistics.variance_rul_minutes || 0).toFixed(2)}`;
+  document.getElementById("q1RUL").textContent =
+    `${(statistics.q1_rul_minutes || 0).toFixed(2)} min`;
+  document.getElementById("q3RUL").textContent =
+    `${(statistics.q3_rul_minutes || 0).toFixed(2)} min`;
+  document.getElementById("iqrRUL").textContent =
+    `${(statistics.iqr_rul_minutes || 0).toFixed(2)} min`;
+  document.getElementById("healthyCount").textContent =
+    statistics.healthy_count || 0;
+}
+
+// ==================== DISPLAY RESULTS (kept for compatibility) ====================
 
 function displayResults(data) {
   console.log("Displaying results:", data);
 
   const { predictions, statistics, classifications } = data;
 
-  // Validate data
   if (!predictions || !statistics) {
     showAlert("error", "Invalid response data");
     return;
   }
 
-  // Show model info
   const modelInfo = document.getElementById("modelInfo");
   const modelBadge = document.getElementById("modelBadge");
   modelInfo.style.display = "block";
-  modelBadge.textContent = `RUL Model: ${(
-    statistics.model_type || "unknown"
-  ).toUpperCase()}`;
-  modelBadge.className = `model-badge model-badge-${
-    statistics.model_type || "misalign"
-  }`;
+  modelBadge.textContent = `RUL Model: ${(statistics.model_type || "unknown").toUpperCase()}`;
+  modelBadge.className = `model-badge model-badge-${statistics.model_type || "misalign"}`;
 
-  // Display classification results if available
-  console.log("Classifications object:", classifications);
   if (classifications && Object.keys(classifications).length > 0) {
     displayClassificationCards(classifications);
   } else {
-    console.warn("No classification results to display");
-    // Hide classification section if no results
     document.getElementById("classificationSection").style.display = "none";
   }
 
-  // Show sections
   document.getElementById("statsSection").style.display = "grid";
   document.getElementById("chartsSection").style.display = "grid";
 
-  // Update statistics cards with safe defaults
   document.getElementById("totalSequences").textContent =
     statistics.total_sequences || 0;
-  document.getElementById("meanRUL").textContent = `${(
-    statistics.mean_rul_minutes || 0
-  ).toFixed(1)} min`;
+  document.getElementById("meanRUL").textContent =
+    `${(statistics.mean_rul_minutes || 0).toFixed(1)} min`;
   document.getElementById("warningCount").textContent =
     statistics.warning_count || 0;
   document.getElementById("severeCount").textContent =
@@ -168,59 +433,21 @@ function displayResults(data) {
   document.getElementById("criticalCount").textContent =
     statistics.critical_count || 0;
 
-  // Update detailed statistics table with safe defaults
-  document.getElementById("detailMeanRUL").textContent = `${(
-    statistics.mean_rul_minutes || 0
-  ).toFixed(2)} min`;
-  document.getElementById("detailMedianRUL").textContent = `${(
-    statistics.median_rul_minutes || 0
-  ).toFixed(2)} min`;
-  document.getElementById("minRUL").textContent = `${(
-    statistics.min_rul_minutes || 0
-  ).toFixed(2)} min`;
-  document.getElementById("maxRUL").textContent = `${(
-    statistics.max_rul_minutes || 0
-  ).toFixed(2)} min`;
-  document.getElementById("rangeRUL").textContent = `${(
-    statistics.range_rul_minutes || 0
-  ).toFixed(2)} min`;
-  document.getElementById("stdRUL").textContent = `${(
-    statistics.std_rul_minutes || 0
-  ).toFixed(2)} min`;
-  document.getElementById("varianceRUL").textContent = `${(
-    statistics.variance_rul_minutes || 0
-  ).toFixed(2)}`;
-  document.getElementById("q1RUL").textContent = `${(
-    statistics.q1_rul_minutes || 0
-  ).toFixed(2)} min`;
-  document.getElementById("q3RUL").textContent = `${(
-    statistics.q3_rul_minutes || 0
-  ).toFixed(2)} min`;
-  document.getElementById("iqrRUL").textContent = `${(
-    statistics.iqr_rul_minutes || 0
-  ).toFixed(2)} min`;
-  document.getElementById("healthyCount").textContent =
-    statistics.healthy_count || 0;
-
-  // Create charts
+  populateStatisticsTable(statistics);
   createRULProgressionChart(predictions);
   createHealthDistributionChart(statistics);
   createRULHistogramChart(predictions.rul_minutes || []);
   createUrgencyChart(statistics);
 
-  // Show alerts based on conditions
-  const criticalCount = statistics.critical_count || 0;
-  const severeCount = statistics.severe_count || 0;
-
-  if (criticalCount > 0) {
+  if (statistics.critical_count > 0) {
     showAlert(
       "warning",
-      `🚨 CRITICAL: ${criticalCount} sequences need immediate maintenance!`
+      `🚨 CRITICAL: ${statistics.critical_count} sequences need immediate maintenance!`,
     );
-  } else if (severeCount > 0) {
+  } else if (statistics.severe_count > 0) {
     showAlert(
       "warning",
-      `⚠️ WARNING: ${severeCount} sequences in severe condition. Plan maintenance soon.`
+      `⚠️ WARNING: ${statistics.severe_count} sequences in severe condition. Plan maintenance soon.`,
     );
   }
 }
@@ -229,33 +456,24 @@ function displayResults(data) {
 
 function displayClassificationCards(classifications) {
   const classificationSection = document.getElementById(
-    "classificationSection"
+    "classificationSection",
   );
   const cardsContainer = document.getElementById("classificationCards");
 
   if (!classifications || Object.keys(classifications).length === 0) {
-    console.log("No classifications to display");
     classificationSection.style.display = "none";
     return;
   }
 
-  console.log("Displaying classification cards for:", Object.keys(classifications));
   classificationSection.style.display = "block";
   cardsContainer.innerHTML = "";
 
-  // Check if we have ensemble results
   if (classifications.ensemble) {
-    console.log("Found ensemble classification:", classifications.ensemble);
     displayEnsembleCard(classifications.ensemble, cardsContainer);
-  } else {
-    console.warn("No ensemble key found in classifications");
   }
 }
 
 function displayEnsembleCard(result, container) {
-  console.log("Creating ensemble card with result:", result);
-
-  // Determine severity class for styling
   let severityClass = "normal";
   let severityIcon = "✅";
 
@@ -272,55 +490,51 @@ function displayEnsembleCard(result, container) {
     }
   }
 
-  // Create card HTML
   const card = document.createElement("div");
   card.className = `classification-card ${severityClass}`;
 
-  // Build class distribution HTML if available
-  let distributionHTML = '';
-  if (result.class_distribution && Object.keys(result.class_distribution).length > 0) {
-    distributionHTML = '<div class="class-distribution"><h4>📊 Prediction Distribution:</h4><ul>';
+  let distributionHTML = "";
+  if (
+    result.class_distribution &&
+    Object.keys(result.class_distribution).length > 0
+  ) {
+    distributionHTML =
+      '<div class="class-distribution"><h4>📊 Prediction Distribution:</h4><ul>';
     for (const [className, data] of Object.entries(result.class_distribution)) {
       distributionHTML += `<li><strong>${className}:</strong> ${data.count} segments (${data.percentage.toFixed(1)}%)</li>`;
     }
-    distributionHTML += '</ul></div>';
+    distributionHTML += "</ul></div>";
   }
 
   card.innerHTML = `
     <div class="classification-header">
-      <h3>🤖 ${result.model_type || 'Ensemble Model'}</h3>
+      <h3>🤖 ${result.model_type || "Ensemble Model"}</h3>
       <span class="confidence-badge">
         ${(result.confidence * 100).toFixed(1)}% Confidence
       </span>
     </div>
-
     <div class="classification-body">
       <div class="classification-item">
         <span class="item-label">Predicted Class</span>
         <span class="item-value class-name">${result.predicted_class}</span>
       </div>
-
       <div class="classification-item">
         <span class="item-label">Fault Type</span>
         <span class="item-value fault-type">${result.fault_description}</span>
       </div>
-
       <div class="classification-item">
         <span class="item-label">Severity</span>
         <span class="item-value severity-badge severity-${severityClass}">
           ${severityIcon} ${result.severity}
         </span>
       </div>
-
       <div class="classification-item full-width">
         <span class="item-label">Maintenance Action</span>
         <div class="maintenance-box">
           <p>${result.maintenance_recommendation}</p>
         </div>
       </div>
-
       ${distributionHTML}
-
       <div class="classification-stats">
         <div class="stat-small">
           <span class="stat-label">Total Segments Analyzed</span>
@@ -331,7 +545,6 @@ function displayEnsembleCard(result, container) {
   `;
 
   container.appendChild(card);
-  console.log("Ensemble card added to container");
 }
 
 // ==================== CREATE CHARTS ====================
@@ -346,12 +559,8 @@ function createRULProgressionChart(predictions) {
   const data = predictions.rul_minutes || [];
   const indices = predictions.sequence_indices || [];
 
-  if (data.length === 0) {
-    console.warn("No data available for RUL progression chart");
-    return;
-  }
+  if (data.length === 0) return;
 
-  // Set canvas width dynamically based on data points
   const canvas = document.getElementById("rulProgressionChart");
   const minWidth = Math.max(800, indices.length * 15);
   canvas.style.width = `${minWidth}px`;
@@ -374,59 +583,7 @@ function createRULProgressionChart(predictions) {
         },
       ],
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 3,
-      plugins: {
-        legend: {
-          display: true,
-          position: "top",
-        },
-        tooltip: {
-          callbacks: {
-            label: function (context) {
-              const rul = context.parsed.y.toFixed(2);
-              const hours = (context.parsed.y / 60).toFixed(2);
-              return `RUL: ${rul} min (${hours} hrs)`;
-            },
-          },
-        },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: "RUL (minutes)",
-            font: {
-              size: 14,
-              weight: "bold",
-            },
-          },
-          ticks: {
-            callback: function (value) {
-              return value.toFixed(0);
-            },
-          },
-        },
-        x: {
-          title: {
-            display: true,
-            text: "Sequence Index",
-            font: {
-              size: 14,
-              weight: "bold",
-            },
-          },
-          ticks: {
-            maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: 20,
-          },
-        },
-      },
-    },
+    options: rulProgressionOptions(),
   });
 }
 
@@ -435,14 +592,7 @@ function createHealthDistributionChart(statistics) {
     .getElementById("healthDistributionChart")
     .getContext("2d");
 
-  if (healthDistributionChart) {
-    healthDistributionChart.destroy();
-  }
-
-  const healthyCount = statistics.healthy_count || 0;
-  const warningCount = statistics.warning_count || 0;
-  const severeCount = statistics.severe_count || 0;
-  const criticalCount = statistics.critical_count || 0;
+  if (healthDistributionChart) healthDistributionChart.destroy();
 
   healthDistributionChart = new Chart(ctx, {
     type: "doughnut",
@@ -450,7 +600,12 @@ function createHealthDistributionChart(statistics) {
       labels: ["Healthy", "Warning", "Severe", "Critical"],
       datasets: [
         {
-          data: [healthyCount, warningCount, severeCount, criticalCount],
+          data: [
+            statistics.healthy_count || 0,
+            statistics.warning_count || 0,
+            statistics.severe_count || 0,
+            statistics.critical_count || 0,
+          ],
           backgroundColor: ["#22c55e", "#f59e0b", "#ff6b35", "#ef4444"],
           borderWidth: 2,
           borderColor: "#ffffff",
@@ -465,23 +620,18 @@ function createHealthDistributionChart(statistics) {
           position: "bottom",
           labels: {
             padding: 15,
-            font: {
-              size: 12,
-            },
-            generateLabels: function (chart) {
-              const data = chart.data;
-              if (data.labels.length && data.datasets.length) {
-                return data.labels.map((label, i) => {
-                  const value = data.datasets[0].data[i];
-                  const total = data.datasets[0].data.reduce(
-                    (a, b) => a + b,
-                    0
-                  );
+            font: { size: 12 },
+            generateLabels: (chart) => {
+              const d = chart.data;
+              if (d.labels.length && d.datasets.length) {
+                return d.labels.map((label, i) => {
+                  const value = d.datasets[0].data[i];
+                  const total = d.datasets[0].data.reduce((a, b) => a + b, 0);
                   const percentage =
                     total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                   return {
                     text: `${label}: ${value} (${percentage}%)`,
-                    fillStyle: data.datasets[0].backgroundColor[i],
+                    fillStyle: d.datasets[0].backgroundColor[i],
                     hidden: false,
                     index: i,
                   };
@@ -493,11 +643,10 @@ function createHealthDistributionChart(statistics) {
         },
         tooltip: {
           callbacks: {
-            label: function (context) {
+            label: (ctx) => {
               const total = statistics.total_sequences || 1;
-              const value = context.parsed;
-              const percentage = ((value / total) * 100).toFixed(1);
-              return `${context.label}: ${value} (${percentage}%)`;
+              const percentage = ((ctx.parsed / total) * 100).toFixed(1);
+              return `${ctx.label}: ${ctx.parsed} (${percentage}%)`;
             },
           },
         },
@@ -509,16 +658,10 @@ function createHealthDistributionChart(statistics) {
 function createRULHistogramChart(rulData) {
   const ctx = document.getElementById("rulHistogramChart").getContext("2d");
 
-  if (rulHistogramChart) {
-    rulHistogramChart.destroy();
-  }
+  if (rulHistogramChart) rulHistogramChart.destroy();
 
-  if (!rulData || rulData.length === 0) {
-    console.warn("No data available for RUL histogram");
-    return;
-  }
+  if (!rulData || rulData.length === 0) return;
 
-  // Create histogram bins
   const bins = 20;
   const min = Math.min(...rulData);
   const max = Math.max(...rulData);
@@ -531,7 +674,6 @@ function createRULHistogramChart(rulData) {
     const binStart = min + i * binSize;
     const binEnd = binStart + binSize;
     labels.push(`${binStart.toFixed(0)}-${binEnd.toFixed(0)}`);
-
     for (const value of rulData) {
       if (
         value >= binStart &&
@@ -560,16 +702,14 @@ function createRULHistogramChart(rulData) {
       responsive: true,
       maintainAspectRatio: true,
       plugins: {
-        legend: {
-          display: false,
-        },
+        legend: { display: false },
         tooltip: {
           callbacks: {
-            label: function (context) {
+            label: (ctx) => {
               const total = rulData.length;
               const percentage =
-                total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
-              return `Count: ${context.parsed.y} (${percentage}%)`;
+                total > 0 ? ((ctx.parsed.y / total) * 100).toFixed(1) : 0;
+              return `Count: ${ctx.parsed.y} (${percentage}%)`;
             },
           },
         },
@@ -580,28 +720,17 @@ function createRULHistogramChart(rulData) {
           title: {
             display: true,
             text: "Frequency",
-            font: {
-              size: 14,
-              weight: "bold",
-            },
+            font: { size: 14, weight: "bold" },
           },
-          ticks: {
-            precision: 0,
-          },
+          ticks: { precision: 0 },
         },
         x: {
           title: {
             display: true,
             text: "RUL Range (minutes)",
-            font: {
-              size: 14,
-              weight: "bold",
-            },
+            font: { size: 14, weight: "bold" },
           },
-          ticks: {
-            maxRotation: 45,
-            minRotation: 45,
-          },
+          ticks: { maxRotation: 45, minRotation: 45 },
         },
       },
     },
@@ -611,14 +740,8 @@ function createRULHistogramChart(rulData) {
 function createUrgencyChart(statistics) {
   const ctx = document.getElementById("urgencyChart").getContext("2d");
 
-  if (urgencyChart) {
-    urgencyChart.destroy();
-  }
+  if (urgencyChart) urgencyChart.destroy();
 
-  const healthyCount = statistics.healthy_count || 0;
-  const warningCount = statistics.warning_count || 0;
-  const severeCount = statistics.severe_count || 0;
-  const criticalCount = statistics.critical_count || 0;
   const total = statistics.total_sequences || 1;
 
   urgencyChart = new Chart(ctx, {
@@ -628,7 +751,12 @@ function createUrgencyChart(statistics) {
       datasets: [
         {
           label: "Count",
-          data: [healthyCount, warningCount, severeCount, criticalCount],
+          data: [
+            statistics.healthy_count || 0,
+            statistics.warning_count || 0,
+            statistics.severe_count || 0,
+            statistics.critical_count || 0,
+          ],
           backgroundColor: ["#22c55e", "#f59e0b", "#ff6b35", "#ef4444"],
           borderColor: ["#16a34a", "#d97706", "#e55b2d", "#dc2626"],
           borderWidth: 2,
@@ -639,13 +767,11 @@ function createUrgencyChart(statistics) {
       responsive: true,
       maintainAspectRatio: true,
       plugins: {
-        legend: {
-          display: false,
-        },
+        legend: { display: false },
         tooltip: {
           callbacks: {
-            label: function (context) {
-              const value = context.parsed.y;
+            label: (ctx) => {
+              const value = ctx.parsed.y;
               const percentage = ((value / total) * 100).toFixed(1);
               return `Count: ${value} (${percentage}%)`;
             },
@@ -658,28 +784,41 @@ function createUrgencyChart(statistics) {
           title: {
             display: true,
             text: "Number of Sequences",
-            font: {
-              size: 14,
-              weight: "bold",
-            },
+            font: { size: 14, weight: "bold" },
           },
-          ticks: {
-            precision: 0,
-          },
+          ticks: { precision: 0 },
         },
         x: {
           title: {
             display: true,
             text: "Maintenance Urgency",
-            font: {
-              size: 14,
-              weight: "bold",
-            },
+            font: { size: 14, weight: "bold" },
           },
         },
       },
     },
   });
+}
+
+// ==================== [NEW] SHOW / HIDE DETAILS TOGGLE ====================
+
+function toggleDetails() {
+  const detailsSection = document.getElementById("detailsToggleSection");
+  const toggleBtn = document.getElementById("toggleDetailsBtn");
+
+  if (!detailsSection || !toggleBtn) return;
+
+  const isHidden =
+    detailsSection.style.display === "none" ||
+    detailsSection.style.display === "";
+
+  if (isHidden) {
+    detailsSection.style.display = "block";
+    toggleBtn.textContent = "🔼 Hide Details";
+  } else {
+    detailsSection.style.display = "none";
+    toggleBtn.textContent = "🔽 Show Details";
+  }
 }
 
 // ==================== ALERT SYSTEM ====================

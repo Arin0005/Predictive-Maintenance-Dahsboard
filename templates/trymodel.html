@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Unified Predictive Maintenance System -  Code-H</title>
+    <title>Unified Predictive Maintenance System - Code-H</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
@@ -280,58 +280,80 @@
           </div>
         </div>
 
-        <!-- Statistics Table -->
-        <div class="chart-card">
-          <h2>📋 Detailed Statistics</h2>
-          <div class="stats-table">
-            <table>
-              <tr>
-                <td>Mean RUL:</td>
-                <td id="detailMeanRUL">-</td>
-              </tr>
-              <tr>
-                <td>Median RUL:</td>
-                <td id="detailMedianRUL">-</td>
-              </tr>
-              <tr>
-                <td>Min RUL:</td>
-                <td id="minRUL">-</td>
-              </tr>
-              <tr>
-                <td>Max RUL:</td>
-                <td id="maxRUL">-</td>
-              </tr>
-              <tr>
-                <td>Range:</td>
-                <td id="rangeRUL">-</td>
-              </tr>
-              <tr>
-                <td>Std Dev:</td>
-                <td id="stdRUL">-</td>
-              </tr>
-              <tr>
-                <td>Variance:</td>
-                <td id="varianceRUL">-</td>
-              </tr>
-              <tr>
-                <td>Q1 (25%):</td>
-                <td id="q1RUL">-</td>
-              </tr>
-              <tr>
-                <td>Q3 (75%):</td>
-                <td id="q3RUL">-</td>
-              </tr>
-              <tr>
-                <td>IQR:</td>
-                <td id="iqrRUL">-</td>
-              </tr>
-              <tr>
-                <td>Healthy Count:</td>
-                <td id="healthyCount">-</td>
-              </tr>
-            </table>
+        <!-- [NEW] Show / Hide Details Toggle -->
+        <div
+          class="chart-card chart-full"
+          style="text-align: center; padding: 1rem"
+        >
+          <button
+            id="toggleDetailsBtn"
+            class="btn-predict"
+            onclick="toggleDetails()"
+            style="max-width: 220px; margin: 0 auto"
+          >
+            🔽 Show Details
+          </button>
+        </div>
+
+        <!-- [NEW] Collapsible Details Section (hidden by default) -->
+        <div
+          id="detailsToggleSection"
+          style="display: none; width: 100%; grid-column: 1 / -1"
+        >
+          <!-- Statistics Table -->
+          <div class="chart-card">
+            <h2>📋 Detailed Statistics</h2>
+            <div class="stats-table">
+              <table>
+                <tr>
+                  <td>Mean RUL:</td>
+                  <td id="detailMeanRUL">-</td>
+                </tr>
+                <tr>
+                  <td>Median RUL:</td>
+                  <td id="detailMedianRUL">-</td>
+                </tr>
+                <tr>
+                  <td>Min RUL:</td>
+                  <td id="minRUL">-</td>
+                </tr>
+                <tr>
+                  <td>Max RUL:</td>
+                  <td id="maxRUL">-</td>
+                </tr>
+                <tr>
+                  <td>Range:</td>
+                  <td id="rangeRUL">-</td>
+                </tr>
+                <tr>
+                  <td>Std Dev:</td>
+                  <td id="stdRUL">-</td>
+                </tr>
+                <tr>
+                  <td>Variance:</td>
+                  <td id="varianceRUL">-</td>
+                </tr>
+                <tr>
+                  <td>Q1 (25%):</td>
+                  <td id="q1RUL">-</td>
+                </tr>
+                <tr>
+                  <td>Q3 (75%):</td>
+                  <td id="q3RUL">-</td>
+                </tr>
+                <tr>
+                  <td>IQR:</td>
+                  <td id="iqrRUL">-</td>
+                </tr>
+                <tr>
+                  <td>Healthy Count:</td>
+                  <td id="healthyCount">-</td>
+                </tr>
+              </table>
+            </div>
           </div>
         </div>
+        <!-- end detailsToggleSection -->
       </section>
 
       <!-- Alert Section -->
@@ -349,7 +371,6 @@
         const themeIcon = document.getElementById("themeIcon");
         const root = document.documentElement;
 
-        // Load saved theme or default to light
         const savedTheme = localStorage.getItem("theme") || "light";
         root.setAttribute("data-theme", savedTheme);
         themeIcon.textContent = savedTheme === "dark" ? "☀️" : "🌙";
@@ -357,7 +378,6 @@
         themeToggle.addEventListener("click", () => {
           const currentTheme = root.getAttribute("data-theme");
           const newTheme = currentTheme === "dark" ? "light" : "dark";
-
           root.setAttribute("data-theme", newTheme);
           localStorage.setItem("theme", newTheme);
           themeIcon.textContent = newTheme === "dark" ? "☀️" : "🌙";
@@ -369,29 +389,20 @@
             e.stopPropagation();
             const parent = this.parentElement;
             const isOpen = parent.classList.contains("active");
-
-            // Close all dropdowns
             document
               .querySelectorAll(".nav-dropdown")
               .forEach((d) => d.classList.remove("active"));
-
-            // Toggle current dropdown
-            if (!isOpen) {
-              parent.classList.add("active");
-            }
+            if (!isOpen) parent.classList.add("active");
           });
         });
 
-        // Submenu functionality
         document.querySelectorAll(".submenu-toggle").forEach((toggle) => {
           toggle.addEventListener("click", function (e) {
             e.stopPropagation();
-            const parent = this.parentElement;
-            parent.classList.toggle("active");
+            this.parentElement.classList.toggle("active");
           });
         });
 
-        // Close dropdowns when clicking outside
         document.addEventListener("click", () => {
           document
             .querySelectorAll(".nav-dropdown")

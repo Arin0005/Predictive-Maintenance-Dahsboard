@@ -1,6 +1,6 @@
 # app.py
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, Response, stream_with_context
 from flask_cors import CORS
 import numpy as np
 import pandas as pd
@@ -11,6 +11,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import io
 from pathlib import Path
 
 app = Flask(__name__)
@@ -59,16 +60,7 @@ def run_parallel(temp_bytes, vib_bytes, model_type):
     """
     Write CSVs to named temp files, then spawn RUL + classification workers
     as two separate OS processes simultaneously.
-
-    Wall-clock time = max(rul_time, classify_time) instead of their sum.
-
-    Returns:
-        y_pred                 : np.ndarray
-        classification_results : dict
-        elapsed                : float (seconds)
     """
-    # Write the uploaded CSVs to real temp files on disk.
-    # Named temp files work on Windows (delete=False required on Windows).
     tmp_temp_file = tempfile.NamedTemporaryFile(
         mode='wb', suffix='_temp.csv', delete=False
     )
@@ -90,23 +82,19 @@ def run_parallel(temp_bytes, vib_bytes, model_type):
         print("LAUNCHING PARALLEL WORKERS")
         print("="*60)
 
-        # ── Start BOTH processes before waiting on either ──────────────────
         proc_rul = _launch('worker_rul.py',      temp_path, vib_path, model_type)
         proc_clf = _launch('worker_classify.py', temp_path, vib_path)
-        # ───────────────────────────────────────────────────────────────────
 
         print(f"  ✓ RUL worker       started  (PID {proc_rul.pid})")
         print(f"  ✓ Classify worker  started  (PID {proc_clf.pid})")
         print("  ⏳ Both running simultaneously...")
 
-        # Block until BOTH finish — they are already running in parallel
         rul_stdout, rul_stderr = proc_rul.communicate()
         clf_stdout, clf_stderr = proc_clf.communicate()
 
         elapsed = time.perf_counter() - t0
         print(f"  ✅ Both workers done in {elapsed:.2f}s")
 
-        # ── Parse RUL result (fatal on failure) ───────────────────────────
         try:
             last_line = rul_stdout.strip().split('\n')[-1]
             rul_data  = json.loads(last_line)
@@ -117,7 +105,6 @@ def run_parallel(temp_bytes, vib_bytes, model_type):
             print(f"\n  ✗ RUL worker stderr:\n{rul_stderr}")
             raise RuntimeError(f"RUL worker failed: {e}") from e
 
-        # ── Parse classification result (non-fatal) ───────────────────────
         classification_results = {}
         try:
             last_line = clf_stdout.strip().split('\n')[-1]
@@ -136,7 +123,6 @@ def run_parallel(temp_bytes, vib_bytes, model_type):
         return y_pred, classification_results, elapsed
 
     finally:
-        # Always clean up temp files even if something crashes
         try:
             os.unlink(tmp_temp_file.name)
         except Exception:
@@ -210,7 +196,6 @@ def predict():
         if temp_file.filename == '' or vib_file.filename == '':
             return jsonify({'success': False, 'error': 'No file selected'}), 400
 
-        # Read file bytes once — workers read from temp files on disk
         temp_bytes = temp_file.read()
         vib_bytes  = vib_file.read()
 
@@ -218,13 +203,10 @@ def predict():
         print(f"NEW PREDICTION REQUEST  (model: {model_type})")
         print(f"{'='*60}")
 
-        # ── TRUE parallel execution via OS subprocesses ────────────────────
         y_pred, classification_results, elapsed = run_parallel(
             temp_bytes, vib_bytes, model_type
         )
-        # ───────────────────────────────────────────────────────────────────
 
-        # Build response
         sequence_indices    = np.arange(len(y_pred))
         rul_minutes         = y_pred.tolist()
         rul_hours           = (y_pred / 60).tolist()
@@ -292,5 +274,125 @@ def predict():
         }), 500
 
 
+# ==================== [NEW] STREAMING ENDPOINT ====================
+
+@app.route('/predict_stream', methods=['POST'])
+def predict_stream():
+    """
+    SSE streaming endpoint.
+
+    Workflow:
+    1. Read uploaded files.
+    2. Run BOTH ML workers once (same parallel logic as /predict).
+    3. Stream predictions back to the frontend one-by-one with a 1-second
+       delay between each, simulating real-time sensor data.
+    4. After all predictions are streamed, send the classification results
+       and final statistics as the last event.
+    """
+    try:
+        model_type = request.form.get('model_type', 'misalign')
+
+        if 'temp_file' not in request.files or 'vib_file' not in request.files:
+            return jsonify({'success': False, 'error': 'Both files are required'}), 400
+
+        temp_file = request.files['temp_file']
+        vib_file  = request.files['vib_file']
+
+        if temp_file.filename == '' or vib_file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+        # Read bytes eagerly — request context won't survive into the generator
+        temp_bytes = temp_file.read()
+        vib_bytes  = vib_file.read()
+
+        print(f"\n{'='*60}")
+        print(f"NEW STREAMING REQUEST  (model: {model_type})")
+        print(f"{'='*60}")
+
+        # Run full ML pipeline once (parallel workers)
+        y_pred, classification_results, elapsed = run_parallel(
+            temp_bytes, vib_bytes, model_type
+        )
+
+        print(f"  ✅ Pipeline done in {elapsed:.2f}s — streaming {len(y_pred)} points")
+
+        # Pre-compute health labels so we can send them per-step
+        health_states       = []
+        maintenance_urgency = []
+        for rul in y_pred:
+            hs, urg = classify_health_state(rul)
+            health_states.append(hs)
+            maintenance_urgency.append(urg)
+
+        # ---- SSE generator ------------------------------------------------
+        def generate():
+            # Signal that streaming is starting
+            yield f"data: {json.dumps({'event': 'start', 'total': int(len(y_pred))})}\n\n"
+
+            # Stream one prediction per second
+            for i, rul in enumerate(y_pred):
+                payload = {
+                    'event'               : 'prediction',
+                    'index'               : i,
+                    'rul_minutes'         : float(rul),
+                    'rul_hours'           : float(rul / 60),
+                    'health_state'        : health_states[i],
+                    'maintenance_urgency' : maintenance_urgency[i],
+                }
+                yield f"data: {json.dumps(payload)}\n\n"
+                time.sleep(1)           # ← 1-second cadence
+
+            # Final event: full statistics + classification
+            healthy_count  = int(sum(1 for s in health_states if s == 'Healthy'))
+            warning_count  = int(sum(1 for s in health_states if s == 'Warning'))
+            severe_count   = int(sum(1 for s in health_states if s == 'Severe'))
+            critical_count = int(sum(1 for s in health_states if s == 'Critical'))
+
+            stats_data = {
+                'total_sequences'     : int(len(y_pred)),
+                'mean_rul_minutes'    : float(np.mean(y_pred)),
+                'median_rul_minutes'  : float(np.median(y_pred)),
+                'mean_rul_hours'      : float(np.mean(y_pred) / 60),
+                'min_rul_minutes'     : float(np.min(y_pred)),
+                'max_rul_minutes'     : float(np.max(y_pred)),
+                'std_rul_minutes'     : float(np.std(y_pred)),
+                'variance_rul_minutes': float(np.var(y_pred)),
+                'range_rul_minutes'   : float(np.ptp(y_pred)),
+                'q1_rul_minutes'      : float(np.percentile(y_pred, 25)),
+                'q3_rul_minutes'      : float(np.percentile(y_pred, 75)),
+                'iqr_rul_minutes'     : float(np.percentile(y_pred, 75) - np.percentile(y_pred, 25)),
+                'healthy_count'       : healthy_count,
+                'warning_count'       : warning_count,
+                'severe_count'        : severe_count,
+                'critical_count'      : critical_count,
+                'model_type'          : model_type,
+                'inference_time_s'    : round(elapsed, 2),
+            }
+
+            final_payload = {
+                'event'          : 'done',
+                'statistics'     : stats_data,
+                'classifications': classification_results,
+            }
+            yield f"data: {json.dumps(final_payload)}\n\n"
+
+        return Response(
+            stream_with_context(generate()),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control'       : 'no-cache',
+                'X-Accel-Buffering'   : 'no',   # disable nginx buffering if present
+            }
+        )
+
+    except Exception as e:
+        print(traceback.format_exc())
+        # Can't send HTTP error once SSE has started; send an error event instead
+        def error_gen():
+            yield f"data: {json.dumps({'event': 'error', 'message': str(e)})}\n\n"
+        return Response(stream_with_context(error_gen()), mimetype='text/event-stream')
+
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # threaded=True is required for SSE — each connection needs its own thread
+    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
